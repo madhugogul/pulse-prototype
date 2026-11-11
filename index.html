@@ -1,0 +1,1548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pulse – Campaign anomaly alerts</title>
+<meta name="description" content="Pulse: anomaly alerting concept for advertisers on Media.net's contextual ad network. Prototype on simulated data.">
+<style>
+:root{--ink:#1D3B47;--ink2:#2B5263;--accent:#E4572E;--teal:#2A7F8E;--red:#C0392B;--amber:#B57A00;--green:#3C8D5A;--slate:#6B7C8C;--blue:#2F6FB0;
+--bg:#F2F5F6;--card:#fff;--line:#DCE5E8;--text:#1F2933;--muted:#5B6B78;--redbg:#FBEAE8;--amberbg:#FBF3E0;--greenbg:#E6F2EA;--bluebg:#E7EFF9;--tealbg:#E3EEF0;--accbg:#FCEBE5}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:var(--teal)}
+button,select,input{font:inherit}
+.top{position:sticky;top:0;z-index:40;height:56px;background:var(--ink);color:#fff;display:flex;align-items:center;gap:12px;padding:0 16px}
+.brand{font-weight:800;font-size:21px;letter-spacing:-.3px;display:flex;align-items:center;gap:1px}
+.brand b{display:inline-block;width:7px;height:7px;background:var(--accent);margin-left:2px;margin-top:9px}
+.proto{font-size:11px;background:rgba(255,255,255,.13);padding:3px 9px;border-radius:12px;white-space:nowrap}
+.clock{margin-left:auto;display:flex;gap:8px;align-items:center}
+.clock .now{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.clock .now small{opacity:.7;font-weight:400;margin-right:6px}
+.ibtn{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:8px;height:34px;min-width:36px;padding:0 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.ibtn:hover{background:rgba(255,255,255,.24)}
+.top select{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:8px;height:34px;padding:0 6px}
+.top select option{color:#000}
+.layout{display:grid;grid-template-columns:212px 1fr;min-height:calc(100vh - 56px)}
+.side{background:#fff;border-right:1px solid var(--line);padding:14px 10px;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto}
+.side a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:var(--text);text-decoration:none;margin-bottom:2px;font-weight:500}
+.side a:hover{background:var(--bg)}
+.side a.on{background:var(--tealbg);color:var(--ink);font-weight:700}
+.side .cnt{margin-left:auto;background:var(--red);color:#fff;border-radius:10px;font-size:11px;padding:1px 7px;font-weight:700}
+.side .sep{border-top:1px solid var(--line);margin:12px 4px}
+.side .watch{font-size:12px;color:var(--muted);padding:6px 12px}
+.ico{width:18px;height:18px;flex:none}
+main{padding:22px 26px 60px;max-width:1240px;width:100%;min-width:0}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:-.2px}
+h2{font-size:16px;margin:0 0 10px}
+h3{font-size:14px;margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.grid{display:grid;gap:14px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .l{font-size:12px;color:var(--muted)}
+.kpi .v{font-size:22px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;margin-top:2px}
+.up{color:var(--green)}.down{color:var(--red)}.mut{color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;letter-spacing:.2px}
+.chip.P0{background:var(--red);color:#fff}.chip.P1{background:var(--amber);color:#fff}.chip.P2{background:var(--slate);color:#fff}.chip.P3{background:var(--green);color:#fff}
+.chip.note{background:var(--blue);color:#fff}.chip.fc{background:var(--accbg);color:var(--accent)}
+.chip.ok{background:var(--greenbg);color:var(--green)}.chip.warn{background:var(--amberbg);color:var(--amber)}.chip.crit{background:var(--redbg);color:var(--red)}.chip.paused{background:#ECEFF1;color:var(--slate)}
+.chip.ver{background:var(--bluebg);color:var(--blue)}.chip.res{background:var(--greenbg);color:var(--green)}.chip.sn{background:#ECEFF1;color:var(--slate)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:9px;padding:0 14px;height:38px;cursor:pointer;font-weight:600;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--teal)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{filter:brightness(.95)}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.sm{height:30px;padding:0 10px;font-size:12px}
+.btn.full{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.row-actions{display:flex;flex-wrap:wrap;gap:8px}
+.banner{display:flex;align-items:center;gap:12px;border-radius:12px;padding:12px 16px;margin-bottom:14px}
+.banner.red{background:var(--redbg);border:1px solid #F1C5BF}
+.banner.blue{background:var(--bluebg);border:1px solid #C9DAF0}
+.banner.green{background:var(--greenbg);border:1px solid #C6E2CF}
+.banner .grow{flex:1;min-width:0}
+.intro{background:var(--ink);color:#fff;border-radius:12px;padding:16px 18px;margin-bottom:16px;display:flex;gap:16px;align-items:center}
+.intro p{margin:4px 0 0;opacity:.85}
+.intro .x{margin-left:auto;display:flex;gap:8px}
+.camps{display:flex;flex-direction:column}
+.crow{display:grid;grid-template-columns:2.2fr .9fr 1.6fr 1.1fr 1.1fr 1fr;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+.crow:hover{background:#FAFCFC}
+.crow.hd{font-size:12px;color:var(--muted);font-weight:600;padding-top:8px;padding-bottom:8px;background:#FAFCFC}
+.crow .nm{font-weight:600}
+.ml{display:none;font-size:11px;color:var(--muted)}
+.bar{height:7px;background:#E7EEF0;border-radius:4px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--teal);border-radius:4px}
+.bar.hot i{background:var(--red)}
+.alist{display:flex;flex-direction:column;gap:10px}
+.acard{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-left-width:4px;border-radius:12px;padding:14px 16px}
+.acard:hover{box-shadow:0 2px 10px rgba(29,59,71,.08)}
+.acard.P0{border-left-color:var(--red)}.acard.P1{border-left-color:var(--amber)}.acard.P2{border-left-color:var(--slate)}.acard.note{border-left-color:var(--blue);background:#FAFCFF}.acard.res{opacity:.85}
+.acard .t{font-weight:700;margin:6px 0 2px}
+.acard .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:6px;align-items:center}
+.money{font-weight:700;color:var(--red);font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 14px;cursor:pointer;font-weight:600;font-size:13px;color:var(--text);text-decoration:none}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ad{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-areas:"head head" "ex act" "chart fb" "evi log";gap:14px;align-items:start}
+.ad-head{grid-area:head}.ad-ex{grid-area:ex}.ad-act{grid-area:act}.ad-chart{grid-area:chart}.ad-evi{grid-area:evi}.ad-fb{grid-area:fb}.ad-log{grid-area:log}
+.big{font-size:20px;font-weight:700;margin:8px 0 6px;line-height:1.3}
+.livebox{display:flex;gap:22px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.livebox .l{font-size:12px;color:var(--muted)}
+.livebox .v{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.aitag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--teal);background:var(--tealbg);padding:3px 9px;border-radius:12px}
+.conf{display:flex;align-items:center;gap:10px;margin:10px 0}
+.conf .track{flex:1;height:8px;background:#E7EEF0;border-radius:4px;overflow:hidden}
+.conf .track i{display:block;height:100%;background:var(--teal)}
+.why{margin:6px 0 10px;padding-left:18px}
+.why li{margin-bottom:4px}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:6px 12px;font-size:13px}
+.kv .k{color:var(--muted)}
+.checks{list-style:none;padding:0;margin:0}
+.checks li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.checks li:last-child{border-bottom:0}
+.ck{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none;color:#fff}
+.ck.y{background:var(--green)}.ck.n{background:var(--red)}.ck.i{background:var(--slate)}
+.checks .lbl{color:var(--muted);min-width:150px}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.t td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+details>summary{cursor:pointer;font-weight:600;color:var(--teal);list-style:none;padding:4px 0}
+details>summary::-webkit-details-marker{display:none}
+details>summary:before{content:"▸ ";}
+details[open]>summary:before{content:"▾ ";}
+pre.json{background:#0F2530;color:#CFE3E8;padding:12px;border-radius:9px;font-size:11.5px;overflow:auto;max-height:320px;white-space:pre-wrap;word-break:break-word}
+.tl{list-style:none;padding:0;margin:0}
+.tl li{position:relative;padding:0 0 12px 18px;font-size:13px}
+.tl li:before{content:"";position:absolute;left:4px;top:6px;width:7px;height:7px;border-radius:50%;background:var(--teal)}
+.tl li:after{content:"";position:absolute;left:7px;top:15px;bottom:0;width:1px;background:var(--line)}
+.tl li:last-child:after{display:none}
+.tl .w{font-size:11px;color:var(--muted)}
+.ask{display:flex;gap:8px;margin-top:10px}
+.ask input{flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 12px}
+.qa{margin-top:10px;font-size:13px}
+.qa .q{font-weight:600;margin-top:8px}
+.qa .an{background:var(--bg);border-radius:9px;padding:8px 10px;margin-top:4px}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;touch-action:pan-y}
+.chart .tip{position:absolute;top:4px;right:6px;background:var(--ink);color:#fff;font-size:12px;padding:4px 8px;border-radius:6px;pointer-events:none;display:none;white-space:nowrap}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.form{display:grid;gap:12px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600}
+.field input,.field select{width:100%;height:40px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:#fff}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:0 12px;height:32px;cursor:pointer;font-weight:600;font-size:12px;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--ink);color:#fff}
+.warnbox{background:var(--amberbg);border:1px solid #EBD5A6;border-radius:9px;padding:8px 10px;font-size:12.5px;margin-top:6px}
+.okbox{background:var(--greenbg);border:1px solid #C6E2CF;border-radius:9px;padding:8px 10px;font-size:12.5px;margin-top:6px}
+.replay{background:var(--ink);color:#fff;border-radius:12px;padding:16px}
+.replay .nums{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0}
+.replay .nums b{font-size:24px;display:block}
+.replay .nums span{font-size:12px;opacity:.8}
+.badge{font-size:10.5px;font-weight:700;background:var(--accbg);color:var(--accent);padding:1px 7px;border-radius:9px;margin-left:6px}
+.step{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:0}
+.step .n{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:none}
+.step .b{flex:1;min-width:0}
+.step p{margin:2px 0 8px;color:var(--muted);font-size:13px}
+.injl li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.two{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:start}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.sbig{font-size:28px;font-weight:800}
+.toasts{position:fixed;right:16px;top:68px;z-index:60;display:flex;flex-direction:column;gap:8px;max-width:360px}
+.toast{background:#fff;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:10px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.12);font-size:13px;cursor:pointer;animation:tin .25s ease}
+.toast.P0{border-left-color:var(--red)}.toast.P1{border-left-color:var(--amber)}.toast.note{border-left-color:var(--blue)}.toast.ok{border-left-color:var(--green)}
+@keyframes tin{from{transform:translateY(-6px);opacity:0}to{transform:none;opacity:1}}
+.modal-bg{position:fixed;inset:0;background:rgba(15,30,38,.45);z-index:70;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:88vh;overflow:auto;padding:20px}
+.modal h2{margin-bottom:6px}
+.modal .act{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.wa{background:#E5DDD5;border-radius:12px;padding:14px}
+.wa .bub{background:#fff;border-radius:8px;padding:10px 12px;font-size:13px;max-width:92%;box-shadow:0 1px 1px rgba(0,0,0,.1);white-space:pre-wrap}
+.wa .from{font-size:12px;font-weight:700;color:#075E54;margin-bottom:6px}
+.variant{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
+.variant:hover,.variant.on{border-color:var(--accent);background:var(--accbg)}
+.variant b{display:block}
+.fab{position:fixed;right:18px;bottom:18px;z-index:45;background:var(--accent);color:#fff;border:0;border-radius:24px;height:46px;padding:0 18px;font-weight:700;box-shadow:0 6px 18px rgba(228,87,46,.4);cursor:pointer;display:flex;align-items:center;gap:8px}
+.sheet-bg{position:fixed;inset:0;background:rgba(15,30,38,.4);z-index:65;display:flex;justify-content:flex-end}
+.sheet{background:#fff;width:420px;max-width:100%;height:100%;overflow:auto;padding:18px}
+.sheet .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.bottom{display:none}
+.coach{position:fixed;right:20px;bottom:20px;z-index:66;width:400px;max-width:calc(100vw - 32px);background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(15,30,38,.28);border:1px solid var(--line);overflow:hidden}
+.coach .ch{background:var(--ink);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.coach .ch .prog{flex:1;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 12px;overflow:hidden}
+.coach .ch .prog i{display:block;height:100%;background:var(--accent)}
+.coach .cb{padding:14px 16px 16px}
+.coach h3{font-size:16px;margin:0 0 6px}
+.coach p{margin:0 0 6px;font-size:13.5px;line-height:1.5;color:#33424D}
+.coach .what{background:var(--accbg);border-radius:8px;padding:8px 10px;font-size:12.5px;margin:8px 0 0;color:#7A2E16}
+.coach .cbtn{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.hl{outline:3px solid var(--accent)!important;outline-offset:4px;border-radius:12px;transition:outline-color .3s}
+.nexth{background:var(--accent)!important}
+body.touring .fab,body.touring .sticky-act,body.touring .toasts{display:none!important}
+body.touring main{padding-bottom:300px}
+.sticky-act{display:none}
+.empty{text-align:center;padding:36px 16px;color:var(--muted)}
+.empty b{display:block;color:var(--text);font-size:16px;margin-bottom:4px}
+.nlog li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);cursor:default}
+.nlog li.click{cursor:pointer}
+.nlog .chn{font-size:11px;font-weight:700;border-radius:8px;padding:2px 8px;background:var(--tealbg);color:var(--ink);white-space:nowrap}
+.nlog .chn.wa{background:#DCF8C6;color:#075E54}
+.nlog .chn.held,.nlog .chn.digest{background:#ECEFF1;color:var(--slate)}
+.nlog .chn.resent{background:var(--redbg);color:var(--red)}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.mt{margin-top:14px}.mb{margin-bottom:14px}
+.hide{display:none!important}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.three{grid-template-columns:1fr 1fr}}
+@media(max-width:767px){
+ body{font-size:14.5px}
+ .top{padding:0 12px;gap:8px}.proto{display:none}
+ .clock .now small{display:none}
+ .clock .now{font-size:13px}
+ .layout{grid-template-columns:1fr}.side{display:none}
+ main{padding:14px 14px 96px}
+ h1{font-size:19px}
+ .bottom{display:flex;position:fixed;bottom:0;left:0;right:0;height:64px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid var(--line);z-index:50}
+ .bottom a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--muted);text-decoration:none;font-weight:600;position:relative;min-height:44px}
+ .bottom a.on{color:var(--ink)}
+ .bottom a .cnt{position:absolute;top:6px;left:54%;background:var(--red);color:#fff;border-radius:9px;font-size:10px;padding:0 5px}
+ .kpis{grid-template-columns:1fr 1fr;gap:10px}
+ .kpi .v{font-size:19px}
+ .crow{grid-template-columns:1fr 1fr;gap:6px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;background:#fff}
+ .crow.hd{display:none}
+ .crow .nm{grid-column:1/-1}
+ .crow .stc{grid-column:1/-1}
+ .ml{display:block}
+ .camps.card{background:transparent;border:0;padding:0}
+ .ad{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "ex" "act" "chart" "evi" "fb" "log"}
+ .ad-act .pribtn{display:none}
+ .sticky-act{display:flex;position:fixed;left:0;right:0;bottom:64px;padding:10px 14px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);z-index:48;gap:8px}
+ .sticky-act .btn{flex:1;height:46px}
+ main.has-sticky{padding-bottom:160px}
+ .two,.three,.f2,.f3{grid-template-columns:1fr}
+ .kv{grid-template-columns:1fr}
+ .checks li{display:grid;grid-template-columns:24px 1fr;gap:2px 10px}.checks li>span:last-child{grid-column:2}.checks .lbl{min-width:0;font-size:12px}
+ .btn{height:44px}.btn.sm{height:36px}
+ .seg button{height:38px}
+ .toasts{left:12px;right:12px;top:64px;max-width:none}
+ .fab{bottom:76px;right:14px;height:44px}
+ .coach{left:8px;right:8px;bottom:70px;width:auto;max-width:none}
+ .coach p{font-size:13px}
+ .ibtn .lbl{display:none}
+ .modal-bg{align-items:flex-end;padding:0}
+ .modal{border-radius:16px 16px 0 0;max-height:90vh}
+ .sheet-bg{align-items:flex-end}
+ .sheet{width:100%;height:auto;max-height:85vh;border-radius:16px 16px 0 0}
+ .intro{flex-direction:column;align-items:flex-start}
+ .senst tr{display:block;border-bottom:1px solid var(--line);padding:8px 0}.senst td{display:block;border:0;padding:4px 0;text-align:left!important}
+ .ntab{min-width:560px}
+ .intro .x{margin-left:0}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">pulse<b></b></div>
+  <span class="proto">Concept prototype · simulated data</span>
+  <div class="clock">
+    <span class="now" id="now"></span>
+    <button class="ibtn nexth" id="nexth" title="Move time forward by one hour">⏭ <span class="lbl">Next hour</span></button>
+    <button class="ibtn" id="play" title="Play / pause automatic time"></button>
+    <select id="speed" title="Speed when playing">
+      <option value="5000">1 hr / 5s</option>
+      <option value="10000" selected>1 hr / 10s</option>
+      <option value="20000">1 hr / 20s</option>
+    </select>
+  </div>
+</header>
+<div class="layout">
+  <nav class="side" id="side"></nav>
+  <main id="view"></main>
+</div>
+<nav class="bottom" id="bottom"></nav>
+<div class="toasts" id="toasts"></div>
+<div id="overlay"></div>
+<button class="fab" id="fab">▶ Take the tour</button>
+<div id="coach"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   PULSE – concept prototype. Everything below runs on simulated
+   data generated in the browser. Alerts are never hardcoded:
+   they come from the detection engine running on that data.
+   ============================================================ */
+
+/* ---------- constants ---------- */
+const BASE = Date.UTC(2026, 8, 2, 0, 0, 0);            // Wed 2 Sep 2026 (hour index 0)
+const DAYS_HIST = 70, START_HOD = 9;                   // 10 weeks of history, today starts 9 AM
+const START = DAYS_HIST * 24 + START_HOD;
+const CURVE = [.18,.14,.12,.12,.13,.18,.3,.45,.6,.7,.75,.78,.8,.78,.76,.78,.82,.88,.95,1,1,.95,.7,.4];
+const SUMC = CURVE.reduce((a, b) => a + b, 0);
+const SITES = ['NewsDaily', 'HomeTrends', 'RecipeHub', 'TechPulse', 'CityGuide'];
+const SITESHARE = [.26, .24, .2, .18, .12];
+const CELLS = ['Mobile · Metro', 'Mobile · Tier-2', 'Desktop · Metro', 'Desktop · Tier-2'];
+const CELLSHARE = [.39, .26, .21, .14];
+const CELLCVR = [1, .85, 1.15, 1];
+const METRICS = ['impr', 'clicks', 'spend', 'conv', 'rev'];
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const CDEF = [
+  ['c1', 'Summer Sale – Cushions', 8000, 5, 1.4, 4.0, 1400],
+  ['c2', 'Wall Art – Always On', 5000, 7, 1.1, 3.0, 2600],
+  ['c3', 'Festive Lights Launch', 12000, 4.5, 1.8, 4.5, 1100],
+  ['c4', 'Bedsheets – Retargeting', 4000, 6, 2.2, 5.5, 1800],
+  ['c5', 'New Arrivals', 6000, 6.5, 1.0, 3.2, 2200],
+  ['c6', 'Clearance Sale', 3000, 4, 1.6, 5.0, 900],
+  ['c7', 'Diwali Gifting', 15000, 6, 1.5, 3.6, 2800],
+  ['c8', 'Brand Search', 2500, 8, 2.0, 6.0, 2000],
+];
+
+const RULES = {
+  runaway:   { name: 'Runaway spend', sev: 'P0', lvl: 4, desc: 'Hourly spend more than 3× normal, or today’s spend above 130% of the planned budget.' },
+  delivery:  { name: 'Delivery stopped', sev: 'P0', lvl: 1, desc: '0 impressions for an hour when ads normally run (payment, ad review, unknown).' },
+  tracking:  { name: 'Conversion tracking error', sev: 'P0', lvl: 3, desc: 'Zero conversions when ≥5 were expected and clicks are normal, or conversions doubled with normal clicks.' },
+  landing:   { name: 'Landing page failure', sev: 'P0', lvl: 2, desc: 'Landing page down or very slow on 2 checks in a row.' },
+  suspicious:{ name: 'Suspicious traffic', sev: 'P0', lvl: 2, desc: 'CTR over 3× normal with almost no conversions, or one site sending over 30% of clicks.' },
+  cvr:       { name: 'Conversion rate drop', sev: 'P1', lvl: 4, desc: 'Conversion rate over 40% below normal across 6 hours while clicks are normal.' },
+  cost:      { name: 'Rising cost per result', sev: 'P1', lvl: 4.5, desc: 'Cost per conversion over 1.5× normal across 6 hours, or creeping up 20%+ two weeks running.' },
+  ctr:       { name: 'CTR decline / creative fatigue', sev: 'P1', lvl: 4, desc: 'CTR over 30% below normal across 24 hours, or falling 5 days in a row.' },
+  under:     { name: 'Under-delivery & pacing', sev: 'P1', lvl: 4.6, desc: 'At midday, on pace to spend under 60% of a normal day.' },
+  budgetfc:  { name: 'Budget will run out early', sev: 'P1', lvl: 5, fc: true },
+  fatiguefc: { name: 'Creative fatigue ahead', sev: 'P2', lvl: 5, fc: true },
+  balance:   { name: 'Low account balance', sev: 'P1', lvl: 5, fc: true },
+  limit:     { name: 'Your limit crossed', sev: 'P1', lvl: 6 },
+};
+const NINE = ['runaway','delivery','tracking','landing','suspicious','cvr','cost','ctr','under'];
+const PEER_RULES = ['cost', 'cvr', 'ctr', 'under'];
+const STICKY = ['under', 'cvr', 'cost', 'budgetfc', 'suspicious'];
+const SENS = { L: { m: 1.25, a: 0.001, label: 'Low' }, M: { m: 1, a: 0.005, label: 'Medium' }, H: { m: 0.8, a: 0.03, label: 'High' } };
+const LVLS = ['L', 'M', 'H'];
+
+const INJ = {
+  tracking:  { n: 'Tracking break (tag stops firing)', c: 1 },
+  double:    { n: 'Double counting (tag fires twice)', c: 1 },
+  pagedown:  { n: 'Landing page down', c: 1 },
+  runaway:   { n: 'Runaway spend (budget typo, extra zero)', c: 1 },
+  payment:   { n: 'Payment failed (whole account)', c: 0 },
+  rejected:  { n: 'Ad rejected by review', c: 1 },
+  bots:      { n: 'Bot clicks from one site (CityGuide)', c: 1 },
+  offer:     { n: 'Offer expired on landing page', c: 1 },
+  segcost:   { n: 'Mobile · Tier-2 cost spike', c: 1 },
+  fatigue:   { n: 'Creative fatigue (slow – ~3 sim days)', c: 1 },
+  under:     { n: 'Under-delivery (bid too low)', c: 1 },
+  fastspend: { n: 'Fast spend (budget runs out early)', c: 1 },
+  market:    { n: 'Market event: festive cost spike (you + 70% of peers)', c: 0 },
+  lowbal:    { n: 'Low account balance', c: 0 },
+};
+
+/* ---------- utilities ---------- */
+let seed = 20261111;
+function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+function nrm() { return (rnd() + rnd() + rnd() - 1.5) / 0.5; }
+function pois(l) { if (l <= 0) return 0; if (l > 30) return Math.max(0, Math.round(l + Math.sqrt(l) * nrm())); const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= rnd(); } while (p > L); return k - 1; }
+function h01(a, b) { const x = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return x - Math.floor(x); }
+function pLE(k, l) { if (l <= 0) return 1; if (k < 0) return 0; let t = Math.exp(-l), s = t; for (let i = 1; i <= k; i++) { t *= l / i; s += t; } return Math.min(1, s); }
+function pGE(k, l) { return k <= 0 ? 1 : 1 - pLE(k - 1, l); }
+function med(a) { if (!a.length) return 0; a = a.slice().sort((x, y) => x - y); const n = a.length; return n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2; }
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const inr = v => '₹' + Math.round(v || 0).toLocaleString('en-IN');
+const num = v => Math.round(v || 0).toLocaleString('en-IN');
+const pctS = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%';
+const pc = v => (v * 100).toFixed(v < 0.1 ? 2 : 1) + '%';
+const dt = h => new Date(BASE + h * 3600e3);
+function tLabel(h) { const d = dt(h); let x = d.getUTCHours(); const ap = x >= 12 ? 'PM' : 'AM'; x = x % 12 || 12; return x + ':00 ' + ap; }
+function dLabel(h) { const d = dt(h); return WD[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()]; }
+function dayOf(h) { return Math.floor(h / 24); }
+function when(h) { return (dayOf(h) === dayOf(S.h) ? 'Today' : dayOf(h) === dayOf(S.h) - 1 ? 'Yesterday' : dLabel(h)) + ', ' + tLabel(h); }
+function dur(hrs) { if (hrs < 1) return '<1 hr'; if (hrs < 48) return hrs + ' hr' + (hrs > 1 ? 's' : ''); return Math.round(hrs / 24) + ' days'; }
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const camp = id => S.camps.find(c => c.id === id);
+
+/* ---------- state ---------- */
+const S = {
+  h: 0, speed: 10000, playing: false, tour: null, lastTick: Date.now(), timer: null,
+  camps: [], peers: [], acct: { balance: 600000, payment: false },
+  inj: [], alerts: [], notifs: [], pending: {}, aid: 0, iid: 0, charts: {}, fb: {}, learned: [],
+  introHidden: false, alertTab: 'active', sevFilter: 'all', hist: null, replayRes: null,
+  settings: {
+    profile: { check: 'Weekly', type: 'Always-on', waste: 'A lot', name: 'Meera', phone: '+91 90000 00000', backup: 'Ravi (store manager)' },
+    sens: { runaway: 'M', delivery: 'M', tracking: 'M', landing: 'M', suspicious: 'M', cvr: 'M', cost: 'M', ctr: 'M', under: 'M' },
+    limits: { maxCpa: '', maxDaily: '', minConv: '' },
+    chan: { P0: { inapp: 1, push: 1, wa: 1, email: 1 }, P1: { inapp: 1, push: 1, wa: 0, email: 1 }, P2: { inapp: 1, push: 0, wa: 0, email: 1 }, P3: { inapp: 1, push: 0, wa: 0, email: 1 } },
+    quiet: { from: 22, to: 8 }, p1cap: 5, waOptIn: true, autoProtect: false,
+  },
+  festivals: [{ name: 'Diwali', date: '8 Nov 2026', day: 67 }, { name: 'Black Friday', date: '27 Nov 2026', day: 86 }],
+};
+const liveSens = r => SENS[S.settings.sens[r] || 'M'];
+const isFest = day => S.festivals.some(f => f.day === day);
+
+/* ---------- campaigns & data generation ---------- */
+function mkCamp(d) {
+  const [id, name, budget, cpc, ctr, cvr, aov] = d;
+  const c = { id, name, budget, planBudget: budget, cpc, ctr: ctr / 100, cvr: cvr / 100, aov, paused: false, excluded: [], edits: [], cool: {},
+    tagOk: true, siteUpdate: null, pageChange: null, rejectReason: null, bid: 1, dayF: {}, data: [], cum: {}, ec: {}, plant: [], truth: [] };
+  for (const m of [...METRICS, 'tconv']) c.cum[m] = [0];
+  for (const m of METRICS) c.ec[m] = [];
+  c.peakImpr = 0.85 * budget / (SUMC * c.ctr * cpc * 0.95);
+  return c;
+}
+function plant(c, type, day, a, b) { c.plant.push({ type, from: day * 24 + a, to: day * 24 + b, start: day * 24 + a, size: 'strong' }); c.truth.push({ type, from: day * 24 + a, to: day * 24 + b, past: true }); }
+
+function effects(c, h) {
+  const f = { impr: 1, ctr: 1, cpc: 1, cvr: 1, rec: 'n', down: false, stop: null, bots: 0, seg: false };
+  const list = c.plant.filter(p => h >= p.from && h <= p.to);
+  for (const i of S.inj) if ((i.cid === c.id || !i.cid) && h >= i.start) list.push(i);
+  for (const p of list) {
+    const st = p.size !== 'mild';
+    switch (p.type) {
+      case 'tracking': f.rec = 'zero'; break;
+      case 'double': f.rec = 'double'; break;
+      case 'pagedown': f.down = true; f.cvr *= 0.04; break;
+      case 'runaway': f.impr *= st ? 4 : 3.4; break;
+      case 'payment': f.stop = 'payment_failed'; break;
+      case 'rejected': f.stop = 'ad_rejected'; break;
+      case 'bots': f.bots = st ? 1.1 : 0.6; break;
+      case 'offer': f.cvr *= st ? 0.45 : 0.6; break;
+      case 'segcost': f.seg = true; break;
+      case 'fatigue': { const days = (h - p.start) / 24; f.ctr *= Math.max(0.3, 1 - (st ? 0.12 : 0.07) * days); break; }
+      case 'under': f.impr *= st ? 0.4 : 0.55; break;
+      case 'fastspend': f.impr *= st ? 2.5 : 2.0; break;
+      case 'market': f.cpc *= st ? 1.8 : 1.5; break;
+    }
+  }
+  return f;
+}
+
+function pushHour(c, h, o) { c.data[h] = o; for (const m of [...METRICS, 'tconv']) c.cum[m][h + 1] = c.cum[m][h] + o[m]; }
+
+function genHour(c, h) {
+  const d = dt(h), hod = d.getUTCHours(), wd = d.getUTCDay(), day = dayOf(h), ds = day * 24;
+  const df = c.dayF[day] || (c.dayF[day] = (() => { let t = 1 + nrm() * 0.06, cv = 1 + nrm() * 0.07; if (rnd() < 0.06) { t *= 0.85; cv *= 0.75; } return { t, c: cv }; })());
+  const f = effects(c, h);
+  const spentToday = c.cum.spend[h] - c.cum.spend[ds];
+  const o = { impr: 0, clicks: 0, spend: 0, conv: 0, tconv: 0, rev: 0, bot: 0, cells: CELLS.map(() => ({ c: 0, s: 0, v: 0 })), sites: SITES.map(() => ({ c: 0, v: 0 })),
+    landing: f.down ? 'down' : 'up', capped: false, cause: null, paused: false, budget: c.budget, planBudget: c.planBudget, pings: 0, dup: 0 };
+  if (c.paused) { o.paused = true; return pushHour(c, h, o); }
+  if (f.stop) { o.cause = f.stop; return pushHour(c, h, o); }
+  if (spentToday >= c.budget - 1) { o.capped = true; return pushHour(c, h, o); }
+  let impr = c.peakImpr * CURVE[hod] * (wd === 0 || wd === 6 ? 0.8 : 1) * df.t * (1 + nrm() * 0.06) * f.impr;
+  const ctr = c.ctr * f.ctr * (1 + nrm() * 0.04);
+  const excl = c.excluded.reduce((a, i) => a + SITESHARE[i], 0);
+  let clicks = impr * ctr * (1 - excl);
+  const cells = CELLSHARE.map((sh, i) => ({ cl: clicks * sh, cpc: c.cpc * c.bid * f.cpc * (f.seg && i === 1 ? 2.5 : 1), cvr: c.cvr * df.c * f.cvr * CELLCVR[i] * (f.seg && i === 1 ? 0.1 : 1) }));
+  let spend = cells.reduce((a, x) => a + x.cl * x.cpc, 0);
+  let bot = clicks * f.bots, botSpend = bot * c.cpc * 0.6;
+  const rem = c.budget - spentToday;
+  if (spend + botSpend > rem) { const sc = Math.max(0, rem / (spend + botSpend)); impr *= sc; clicks *= sc; bot *= sc; botSpend *= sc; cells.forEach(x => x.cl *= sc); spend *= sc; }
+  spend += botSpend;
+  let tconv = 0;
+  o.cells = cells.map(x => { const v = pois(x.cl * x.cvr); tconv += v; return { c: Math.round(x.cl), s: x.cl * x.cpc, v }; });
+  const rec = f.rec === 'zero' ? 0 : f.rec === 'double' ? tconv * 2 : tconv;
+  if (f.rec !== 'n') o.cells.forEach(x => x.v = f.rec === 'zero' ? 0 : x.v * 2);
+  const live = SITESHARE.map((s, i) => c.excluded.includes(i) ? 0 : s); const ls = live.reduce((a, b) => a + b, 0) || 1;
+  o.sites = live.map((s, i) => ({ c: Math.round(clicks * s / ls) + (i === 4 ? Math.round(bot) : 0), v: rec * s / ls }));
+  o.impr = Math.round(impr); o.clicks = Math.round(clicks + bot); o.spend = spend; o.conv = rec; o.tconv = tconv; o.bot = botSpend;
+  o.rev = rec * c.aov * (0.9 + rnd() * 0.2);
+  o.pings = f.rec === 'zero' ? 0 : Math.round(clicks * (f.down ? 0.05 : 0.92));
+  o.dup = f.rec === 'double' ? tconv : 0;
+  return pushHour(c, h, o);
+}
+
+/* ---------- expected values (same hour & weekday, last 4 weeks) ---------- */
+function E(c, h, m) { const a = c.ec[m]; if (a[h] !== undefined) return a[h]; const v = []; for (let k = 1; k <= 4; k++) { const o = c.data[h - 168 * k]; if (o && !o.paused) v.push(o[m]); } const r = med(v); if (h < S.h) a[h] = r; return r; }
+function ER(c, h, m) { const v = []; for (let k = 1; k <= 4; k++) { const o = c.data[h - 168 * k]; if (o && !o.paused) v.push(o[m]); } if (!v.length) return { lo: 0, hi: 0, med: 0 }; return { lo: Math.min(...v), hi: Math.max(...v), med: med(v) }; }
+function ES(c, h0, h1, m) { let s = 0; for (let h = Math.max(0, h0); h <= h1; h++) s += E(c, h, m); return s; }
+function SA(c, h0, h1, m) { h0 = Math.max(0, h0); if (h1 < h0) return 0; return c.cum[m][h1 + 1] - c.cum[m][h0]; }
+function dayCtr(c, dd) { return SA(c, dd * 24, dd * 24 + 23, 'clicks') / Math.max(1, SA(c, dd * 24, dd * 24 + 23, 'impr')); }
+
+/* ---------- detection rules ---------- */
+function evalRules(c, h, o) {
+  const out = []; const cur = c.data[h]; if (!cur || cur.paused) return out;
+  const hod = dt(h).getUTCHours(), day = dayOf(h), ds = day * 24;
+  const sv = o.sens;
+  const add = (rule, data, atRisk, sev) => out.push({ rule, cid: c.id, data, atRisk: Math.max(0, atRisk || 0), sev: sev || RULES[rule].sev });
+  const eI = E(c, h, 'impr');
+  if (cur.impr === 0 && !cur.capped && eI > 50) { add('delivery', { cause: cur.cause || 'unknown', expImpr: eI }, E(c, h, 'rev')); return out; }
+  if (cur.capped) return out;
+  const eS = E(c, h, 'spend'); const spentToday = SA(c, ds, h, 'spend');
+  { const s = sv('runaway'); if ((eS > 30 && cur.spend > (1 + 2 * s.m) * eS) || spentToday > 1.3 * cur.planBudget) add('runaway', { spend: cur.spend, expSpend: eS, spentToday, plan: cur.planBudget, budget: cur.budget, ratio: cur.spend / Math.max(1, eS) }, cur.spend - eS); }
+  const prev = c.data[h - 1];
+  if (cur.landing !== 'up' && prev && prev.landing !== 'up') add('landing', { status: cur.landing }, cur.spend);
+  { // suspicious traffic
+    const s = sv('suspicious'), h0 = h - 2; const cl = SA(c, h0, h, 'clicks'), im = SA(c, h0, h, 'impr'), cv = SA(c, h0, h, 'conv');
+    const ecl = ES(c, h0, h, 'clicks'), eim = ES(c, h0, h, 'impr'), ecv = ES(c, h0, h, 'conv');
+    const ctr = cl / Math.max(1, im), ectr = ecl / Math.max(1, eim), cvr = cv / Math.max(1, cl), ecvr = ecv / Math.max(1, ecl);
+    let site = 0, bs = 0; for (let k = h0; k <= h; k++) { if (!c.data[k]) continue; site += c.data[k].sites[4].c; bs += c.data[k].bot; }
+    const share = site / Math.max(1, cl);
+    const A = cl >= 150 && ctr > (1 + 2 * s.m) * ectr && cvr < 0.25 * ecvr;
+    const B = cl >= 100 && share > 0.12 + 0.18 * s.m && cvr < 0.75 * ecvr;
+    if (A || B) { const risk = Math.max(bs / 3, (share - 0.12) * cur.spend); add('suspicious', { ctr, ectr, cvr, ecvr, share, site: SITES[4], clicks: cl, botSpend: bs }, risk, risk > 1000 ? 'P0' : 'P1'); }
+  }
+  { // conversion tracking — uses conversions AND the tag's own page-view pings / order IDs
+    const s = sv('tracking'); let lam = 0, cl = 0, ecl = 0, pg = 0;
+    for (let w = 1; w <= 4; w++) {
+      const k = h - w + 1, q = c.data[k]; if (!q || q.conv > 0 || q.paused || q.impr === 0) break;
+      lam += E(c, k, 'conv'); cl += q.clicks; ecl += E(c, k, 'clicks'); pg += q.pings;
+      const r = cl / Math.max(1, ecl), la = lam * r, silent = pg === 0 && cl >= 20;
+      if (r > 0.7 && r < 1.3 && ((silent && la >= 2 && Math.exp(-la) < s.a * 40) || (la >= 9 && Math.exp(-la) < s.a / 10))) { add('tracking', { mode: 'zero', hours: w, exp: la, clicksRatio: r, silent }, SA(c, h - w + 1, h, 'spend') / w); break; }
+    }
+    const h0 = h - 2; let cv = 0, dup = 0; for (let k = h0; k <= h; k++) { const q = c.data[k]; if (q) { cv += q.conv; dup += q.dup; } }
+    const cl3 = SA(c, h0, h, 'clicks'), ecl3 = ES(c, h0, h, 'clicks'), r3 = cl3 / Math.max(1, ecl3), la3 = ES(c, h0, h, 'conv') * r3;
+    if (r3 > 0.7 && r3 < 1.3 && ((cv >= 4 && dup / cv > 0.3) || (la3 >= 10 && cv > (1.2 + s.m) * la3 && pGE(Math.round(cv), la3) < s.a / 20))) add('tracking', { mode: 'double', conv: cv, exp: la3, ratio: cv / Math.max(1, la3), dupRate: dup / Math.max(1, cv) }, cur.spend * 0.25);
+  }
+  const recentEdit = c.edits.some(e => e.h <= h && h - e.h < 24 && e.perf);
+  if (!recentEdit) {
+    const fm = isFest(day) ? 1.3 : 1;
+    { // conversion rate drop
+      const s = sv('cvr'), h0 = h - 5; const cl = SA(c, h0, h, 'clicks'), cv = SA(c, h0, h, 'conv'), ecl = ES(c, h0, h, 'clicks'), ecv = ES(c, h0, h, 'conv'); const r = cl / Math.max(1, ecl), lam = ecv * r;
+      if (cl >= 100 && lam >= 12 && r > 0.7 && r < 1.3 && cv < Math.max(0.05, 1 - 0.4 * s.m * fm) * lam && pLE(Math.round(cv), lam) < s.a / 2)
+        add('cvr', { cvr: cv / cl, ecvr: ecv / Math.max(1, ecl), conv: cv, exp: lam }, (SA(c, h0, h, 'spend') / 6) * (1 - cv / lam));
+    }
+    { // cost per result
+      const s = sv('cost'), h0 = h - 5; const sp = SA(c, h0, h, 'spend'), cv = SA(c, h0, h, 'conv'), esp = ES(c, h0, h, 'spend'), ecv = ES(c, h0, h, 'conv');
+      const lam = sp * (ecv / Math.max(1, esp)); const ratio = (sp / Math.max(1, cv)) / (esp / Math.max(1, ecv));
+      if (lam >= 15 && cv >= 10 && ratio > 1 + 0.5 * s.m * fm && pLE(Math.round(cv), lam) < s.a / 2)
+        add('cost', { mode: 'sudden', cpa: sp / cv, ecpa: esp / Math.max(1, ecv), ratio, cpcRatio: (sp / Math.max(1, SA(c, h0, h, 'clicks'))) / (esp / Math.max(1, ES(c, h0, h, 'clicks'))) }, (sp / 6) * (1 - 1 / ratio));
+      if (hod >= 9 && h >= 504) {
+        const cp = (a, b) => SA(c, a, b, 'spend') / Math.max(1, SA(c, a, b, 'conv'));
+        const w1 = cp(h - 167, h), w2 = cp(h - 335, h - 168), w3 = cp(h - 503, h - 336);
+        if (w1 > w2 * (1 + 0.2 * s.m) && w2 > w3 * (1 + 0.2 * s.m)) add('cost', { mode: 'creep', w1, w2, w3 }, 0, 'P2');
+      }
+    }
+    { // CTR decline
+      const s = sv('ctr'), h0 = h - 23; const im = SA(c, h0, h, 'impr'), cl = SA(c, h0, h, 'clicks'), eim = ES(c, h0, h, 'impr'), ecl = ES(c, h0, h, 'clicks'); const ectr = ecl / Math.max(1, eim), lam = im * ectr;
+      if (im >= 5000 && cl < Math.max(0.05, 1 - 0.3 * s.m * fm) * lam && pLE(Math.round(cl), lam) < s.a) add('ctr', { mode: 'sudden', ctr: cl / im, ectr }, (SA(c, h0, h, 'spend') / 24) * (1 - cl / lam) * 0.5);
+      else if (hod >= 9) {
+        const dc = []; for (let k = 6; k >= 1; k--) dc.push(dayCtr(c, day - k));
+        let down = true; for (let i = 1; i < dc.length; i++) if (!(dc[i] < dc[i - 1])) down = false;
+        if (down && dc[5] < dc[0] * (1 - 0.2 * s.m)) add('ctr', { mode: 'trend', days: dc }, 0, 'P2');
+      }
+    }
+    if (hod >= 12 && hod <= 17) { // under-delivery
+      const s = sv('under'); const eNow = ES(c, ds, h, 'spend'), eDay = ES(c, ds, ds + 23, 'spend'); const proj = spentToday / Math.max(1, eNow) * eDay;
+      if (eDay > 500 && proj < Math.max(0.1, 1 - 0.4 * s.m) * eDay) add('under', { proj, eDay, ratio: proj / eDay, imprRatio: SA(c, ds, h, 'impr') / Math.max(1, ES(c, ds, h, 'impr')) }, (ES(c, ds, ds + 23, 'rev') / 24) * (1 - proj / eDay));
+    }
+  }
+  if (!o.replay) { // forecasts
+    if (hod < 17) {
+      const rate = cur.spend / Math.max(1, eS);
+      if (rate > 1.3) {
+        let cum = spentToday, ex = null; for (let t = h + 1; t <= ds + 23; t++) { cum += E(c, t, 'spend') * rate; if (cum >= cur.budget) { ex = t; break; } }
+        if (ex !== null && dt(ex).getUTCHours() < 18) { const share = ES(c, ds + 18, ds + 23, 'conv') / Math.max(1, ES(c, ds, ds + 23, 'conv')); if (share >= 0.3) add('budgetfc', { exAt: ex, share, rate }, ES(c, ex, ds + 23, 'rev') / Math.max(1, ex - h)); }
+      }
+    }
+    if (hod >= 9) {
+      const dc = []; for (let k = 4; k >= 1; k--) dc.push(dayCtr(c, day - k));
+      if (dc[1] < dc[0] && dc[2] < dc[1] && dc[3] < dc[2] && dc[3] < dc[0] * 0.92) {
+        let avg = 0; for (let k = 1; k <= 28; k++) avg += dayCtr(c, day - k); avg /= 28;
+        const slope = (dc[3] - dc[0]) / 3, target = 0.7 * avg;
+        if (slope < 0 && dc[3] > target) { const days = Math.ceil((dc[3] - target) / (-slope)); if (days <= 7) add('fatiguefc', { days, dc, avg }, 0); }
+      }
+    }
+  }
+  return out;
+}
+
+function evalAccount(h) {
+  const out = []; const day = dayOf(h), ds = day * 24, hod = dt(h).getUTCHours();
+  const add = (rule, data, atRisk, sev) => out.push({ rule, cid: null, data, atRisk: atRisk || 0, sev: sev || RULES[rule].sev });
+  let wk = 0; for (const c of S.camps) wk += SA(c, h - 167, h, 'spend'); const avg = wk / 7;
+  if (avg > 0 && S.acct.balance < 2 * avg) add('balance', { balance: S.acct.balance, days: S.acct.balance / avg, avg }, 0);
+  const L = S.settings.limits;
+  const tot = (m, a, b) => S.camps.reduce((s, c) => s + SA(c, a, b, m), 0);
+  const etot = (m, a, b) => S.camps.reduce((s, c) => s + ES(c, a, b, m), 0);
+  if (+L.maxCpa > 0) { const sp = tot('spend', h - 23, h), cv = tot('conv', h - 23, h); if (cv >= 5 && sp / cv > +L.maxCpa) add('limit', { kind: 'cpa', val: sp / cv, lim: +L.maxCpa }, (sp / 24) * (1 - +L.maxCpa / (sp / cv))); }
+  if (+L.maxDaily > 0) { const sp = tot('spend', ds, h), en = etot('spend', ds, h), ed = etot('spend', ds, ds + 23); const proj = sp / Math.max(1, en) * ed; if (proj > +L.maxDaily) add('limit', { kind: 'daily', val: proj, lim: +L.maxDaily }, (proj - +L.maxDaily) / 24); }
+  if (+L.minConv > 0 && hod >= 18) { const cv = tot('conv', ds, h), en = etot('conv', ds, h), ed = etot('conv', ds, ds + 23); const proj = cv / Math.max(1, en) * ed; if (proj < +L.minConv) add('limit', { kind: 'conv', val: proj, lim: +L.minConv }, 0); }
+  return out;
+}
+
+function peerPct(rule, h) {
+  const mk = S.inj.some(i => i.type === 'market'); let n = 0;
+  S.peers.forEach((p, i) => { let mv = (h01(p.s, h) - 0.5) * 0.3; if (i === 29 && h % 48 < 6) mv += 0.5; if (mk && rule === 'cost' && p.mkt) mv += 0.55 + h01(p.s + 7, h) * 0.2; if (mv > 0.3) n++; });
+  return Math.round(100 * n / S.peers.length);
+}
+const sevRank = s => ({ P0: 0, P1: 1, P2: 2, P3: 3 }[s] ?? 4);
+
+/* ---------- alert lifecycle ---------- */
+function detect(h) {
+  let conds = [];
+  const focus = S.tour ? S.tour.focus : null;
+  for (const c of S.camps) { if (c.paused) continue; if (focus && !focus.includes(c.id)) continue; for (const x of evalRules(c, h, { sens: liveSens })) { if ((c.cool[x.rule] || -1) > h) continue; conds.push(x); } }
+  if (!focus || focus.includes('acct')) conds.push(...evalAccount(h));
+  for (const x of conds) { x.peers = peerPct(x.rule, h); x.note = PEER_RULES.includes(x.rule) && x.peers >= 60; }
+  const supp = [];
+  conds = conds.filter(x => { if (!x.cid || x.note) return true; const up = conds.find(y => y !== x && y.cid === x.cid && !y.note && RULES[y.rule].lvl < RULES[x.rule].lvl); if (up) { supp.push({ x, up }); return false; } return true; });
+  const groups = {};
+  for (const x of conds) {
+    let key; if (x.note) key = 'note:' + x.rule; else if (x.rule === 'delivery' && x.data.cause === 'payment_failed') key = 'delivery:payment'; else key = x.rule + ':' + (x.cid || 'acct') + ':' + (x.data.mode || x.data.kind || '');
+    const g = groups[key] || (groups[key] = { key, rule: x.rule, sev: x.sev, cids: [], items: [], note: x.note, atRisk: 0, peers: x.peers, data: x.data });
+    if (x.cid && !g.cids.includes(x.cid)) g.cids.push(x.cid); g.items.push(x); g.atRisk += x.atRisk; if (sevRank(x.sev) < sevRank(g.sev)) g.sev = x.sev;
+  }
+  const live = new Set();
+  for (const k in groups) {
+    const g = groups[k]; const ex = S.alerts.find(a => a.key === k && a.status !== 'resolved');
+    S.pending[k] = (S.pending[k] || 0) + 1;
+    if (!ex && g.sev !== 'P0' && S.pending[k] < 2) continue;
+    live.add(k);
+    if (ex) updateAlert(ex, g, h); else createAlert(g, h);
+  }
+  for (const k in S.pending) if (!groups[k]) delete S.pending[k];
+  for (const { x, up } of supp) {
+    const ua = S.alerts.find(a => a.status !== 'resolved' && a.cids.includes(up.cid) && a.rule === up.rule);
+    if (ua && !ua.suppressed.includes(RULES[x.rule].name)) ua.suppressed.push(RULES[x.rule].name);
+    const da = S.alerts.find(a => a.status !== 'resolved' && a.rule === x.rule && a.cids.includes(x.cid) && !a.note);
+    if (da && ua) resolveAlert(da, h, `Merged into “${RULES[up.rule].name}” — that is the root cause.`, 0);
+  }
+  for (const a of S.alerts) {
+    if (a.status === 'resolved') continue;
+    if (a.snoozeUntil && h >= a.snoozeUntil) { a.snoozeUntil = null; if (a.status === 'snoozed') { a.status = 'active'; logA(a, h, 'Snooze ended.'); } }
+    const present = live.has(a.key) ? !quickOK(a, h) : (STICKY.includes(a.rule) && !a.note && !quickOK(a, h));
+    if (a.status === 'verifying') {
+      if (present) { a.vfail = (a.vfail || 0) + 1; a.vok = 0; if (a.vfail >= 2) { a.status = 'active'; a.vfail = 0; logA(a, h, 'Re-check failed — the problem is still happening after the fix.'); toast(`Still happening: ${RULES[a.rule].name}`, a.sev, a.id); } }
+      else { a.vok = (a.vok || 0) + 1; logA(a, h, `Re-check ${a.vok} of 2 passed.`); if (a.vok >= 2) resolveAlert(a, h, 'Fix confirmed — metrics are back inside the normal range.', 1); }
+    } else if (!present) { a.clear = (a.clear || 0) + 1; if (a.clear >= 2) resolveAlert(a, h, a.note ? 'Market movement has eased.' : 'Back to normal on its own.', 0); }
+    else a.clear = 0;
+  }
+  for (const a of S.alerts) if (a.status === 'active' && a.sev === 'P0' && !a.note && !a.seen && !a.escalated && h > a.start) { a.escalated = true; notify(a, h, 'resend'); logA(a, h, `No response in 30 min — re-sent to backup contact (${S.settings.profile.backup}).`); }
+}
+
+function quickOK(a, h) {
+  const c = camp(a.cids[0]); if (!c) return false; const q = c.data[h]; if (!q || q.paused) return true; const h0 = h - 1;
+  const r = m => SA(c, h0, h, m) / Math.max(1e-9, ES(c, h0, h, m));
+  switch (a.rule) {
+    case 'tracking': return a.data.mode === 'zero' ? (SA(c, h0, h, 'conv') > 0 || ES(c, h0, h, 'conv') < 1) : r('conv') / Math.max(0.01, r('clicks')) < 1.4;
+    case 'landing': return q.landing === 'up';
+    case 'delivery': return a.cids.every(id => { const z = camp(id).data[h]; return z.impr > 0 || z.paused; });
+    case 'runaway': return q.spend < 1.6 * E(c, h, 'spend') && q.budget <= q.planBudget * 1.01;
+    case 'suspicious': { let s = 0; for (let k = h0; k <= h; k++) s += c.data[k].sites[4].c; return s / Math.max(1, SA(c, h0, h, 'clicks')) < 0.2; }
+    case 'cvr': return r('conv') / Math.max(0.01, r('clicks')) > 0.8;
+    case 'cost': if (a.data.mode === 'creep') return false; return SA(c, h - 3, h, 'spend') / Math.max(1, SA(c, h - 3, h, 'conv')) < 1.25 * ES(c, h - 3, h, 'spend') / Math.max(1, ES(c, h - 3, h, 'conv'));
+    case 'ctr': if (a.data.mode === 'trend') return false; return r('clicks') / Math.max(0.01, r('impr')) > 0.85;
+    case 'under': return r('spend') > 0.8;
+    case 'budgetfc': return !q.capped && q.spend < 1.3 * E(c, h, 'spend');
+    default: return false;
+  }
+}
+
+function moneyLabel(a) { if (a.note) return 'Extra cost vs normal (all similar advertisers)'; return ({ delivery: 'Sales missed (est.)', under: 'Sales missed (est.)', budgetfc: 'Sales at risk (est.)', balance: 'At risk', fatiguefc: 'At risk', tracking: a.data.mode === 'double' ? 'Spend on wrong data' : 'Spent with no tracked results', landing: 'Spent on a broken page', suspicious: 'Spent on suspicious clicks', runaway: 'Extra spend vs normal', cvr: 'Wasted vs normal', cost: 'Extra cost vs normal', ctr: 'Lost efficiency', limit: 'Over your limit' })[a.rule] || 'At risk'; }
+
+function createAlert(g, h) {
+  const a = { id: ++S.aid, key: g.key, rule: g.rule, sev: g.note ? 'note' : g.sev, cids: g.cids.slice(), start: h, status: 'active', atRisk: g.atRisk, spent: g.atRisk, data: g.data, peers: g.peers, note: !!g.note,
+    fc: !!RULES[g.rule].fc, log: [], seen: false, suppressed: [], ask: [], items: g.items };
+  S.alerts.unshift(a);
+  refreshInvestigation(a, h);
+  logA(a, h, a.note ? `Similar advertisers moved too (${a.peers}%), so this is shown as a market note, not an alarm.` : `Detected by rule “${RULES[a.rule].name}”${a.fc ? ' (forecast)' : ''}.`);
+  notify(a, h, 'new');
+  if (S.settings.autoProtect && a.sev === 'P0' && ['tracking', 'landing', 'runaway', 'suspicious'].includes(a.rule) && a.ex.conf >= 80) {
+    for (const id of a.cids) camp(id).paused = true; a.autoPaused = true;
+    logA(a, h, 'Auto-protect paused the campaign because you opted in. Use “Resume campaign” to undo.');
+  }
+  if (a.sev === 'P0' || a.note) toast(a.note ? `Market note: ${a.ex.headline}` : `${a.sev} · ${RULES[a.rule].name}: ${a.ex.headline}`, a.sev, a.id);
+}
+function updateAlert(a, g, h) {
+  for (const id of g.cids) if (!a.cids.includes(id)) a.cids.push(id);
+  a.atRisk = g.atRisk; a.spent += g.atRisk; a.data = g.data; a.peers = g.peers; a.items = g.items;
+  if (a.status === 'active' && sevRank(g.sev) < sevRank(a.sev) && !a.note) { a.sev = g.sev; logA(a, h, `Escalated to ${g.sev}.`); }
+  refreshInvestigation(a, h);
+}
+function refreshInvestigation(a, h) { a.si = a.cids[0] ? segInsight(camp(a.cids[0]), h) : null; a.ev = evidence(a, h); a.ex = investigate(a); }
+function checkGap() { return ({ Daily: 24, Weekly: 72, Rarely: 120 })[S.settings.profile.check] || 72; }
+function resolveAlert(a, h, msg, fixed) {
+  a.status = 'resolved'; a.end = h; a.resolvedMsg = msg; a.fixed = !!fixed;
+  a.saved = fixed ? a.atRisk * Math.max(0, checkGap() - (h - a.start)) : 0;
+  for (const id of a.cids) { const c = camp(id); if (c) c.cool[a.rule] = h + 24; }
+  logA(a, h, msg + (a.saved ? ` Estimated ${inr(a.saved)} saved vs finding it at your next usual check.` : ''));
+  if (fixed) toast(`Resolved: ${RULES[a.rule].name}${a.saved ? ' · ' + inr(a.saved) + ' saved' : ''}`, 'ok', a.id);
+}
+function logA(a, h, text) { a.log.push({ h, text }); }
+
+/* ---------- notifications ---------- */
+function inQuiet(hod) { const { from, to } = S.settings.quiet; return from > to ? (hod >= from || hod < to) : (hod >= from && hod < to); }
+function addN(h, ch, to, text, a, status) { S.notifs.unshift({ h, ch, to, text, aid: a ? a.id : null, sev: a ? a.sev : '', status }); if (S.notifs.length > 200) S.notifs.pop(); }
+function notify(a, h, kind) {
+  const st = S.settings, hod = dt(h + 1).getUTCHours(), who = st.profile.name, title = a.ex.headline;
+  if (a.note) { addN(h, 'In-app', who, 'Market note: ' + title, a, 'sent'); return; }
+  if (kind === 'resend') { addN(h, 'WhatsApp', st.profile.backup, 'No response in 30 min — ' + title, a, 'resent'); return; }
+  const sev = a.sev, ch = st.chan[sev] || st.chan.P2; const sentLbl = [];
+  const send = (k, label) => { if (!ch[k]) return; if (k === 'wa' && !st.waOptIn) return; addN(h, label, k === 'email' ? who + ' (email)' : who, title, a, 'sent'); sentLbl.push(label); };
+  if (sev === 'P0') { send('inapp', 'In-app'); send('push', 'Push'); send('wa', 'WhatsApp'); send('email', 'Email'); logA(a, h, `Sent via ${sentLbl.join(', ')} (P0 ignores quiet hours).`); }
+  else if (sev === 'P1') {
+    const today = dayOf(h + 1); const n = S.notifs.filter(x => x.sev === 'P1' && x.status === 'sent' && x.ch === 'In-app' && dayOf(x.h + 1) === today).length;
+    if (n >= st.p1cap) { addN(h, 'Daily digest', who, title, a, 'digest'); logA(a, h, `Daily P1 limit (${st.p1cap}) reached — added to the 9 AM digest.`); return; }
+    if (inQuiet(hod)) { addN(h, 'Held', who, title, a, 'held'); logA(a, h, `Quiet hours — held until ${st.quiet.to}:00 AM; visible in-app now.`); return; }
+    send('inapp', 'In-app'); send('push', 'Push'); send('wa', 'WhatsApp'); send('email', 'Email'); logA(a, h, `Sent via ${sentLbl.join(', ') || 'in-app'}.`);
+  } else { addN(h, 'Daily digest', who, title, a, 'digest'); logA(a, h, 'Added to the 9 AM daily digest.'); }
+}
+
+/* ---------- segment insight & evidence ---------- */
+function segInsight(c, h) {
+  if (!c) return null; const h0 = h - 5;
+  const cells = CELLS.map((name, i) => {
+    let cl = 0, s = 0, v = 0, es = 0, ev = 0;
+    for (let k = h0; k <= h; k++) {
+      const q = c.data[k]; if (!q) continue; cl += q.cells[i].c; s += q.cells[i].s; v += q.cells[i].v;
+      const vs = [], vv = []; for (let w = 1; w <= 4; w++) { const o = c.data[k - 168 * w]; if (o && !o.paused) { vs.push(o.cells[i].s); vv.push(o.cells[i].v); } }
+      es += med(vs); ev += med(vv);
+    }
+    const cpa = s / Math.max(0.5, v), ecpa = es / Math.max(0.5, ev);
+    return { name, clicks: cl, spend: s, conv: v, cpa, ecpa, ratio: cpa / Math.max(1, ecpa) };
+  });
+  let sc = 0; const sites = SITES.map((name, i) => { let x = 0; for (let k = h - 2; k <= h; k++) if (c.data[k]) x += c.data[k].sites[i].c; sc += x; return { name, clicks: x }; });
+  sites.forEach((s, i) => { s.share = s.clicks / Math.max(1, sc); s.eshare = SITESHARE[i]; });
+  const valid = cells.filter(x => x.spend > 50);
+  const worst = valid.slice().sort((a, b) => b.ratio - a.ratio)[0] || cells[0];
+  const best = valid.slice().sort((a, b) => a.ratio - b.ratio)[0] || cells[0];
+  const uniform = worst.ratio / Math.max(0.01, best.ratio) < 1.8 || worst.ratio > 50;
+  const spike = sites.slice().sort((a, b) => (b.share - b.eshare) - (a.share - a.eshare))[0];
+  return { cells, sites, worst, uniform, siteSpike: spike.share > spike.eshare * 2 && spike.share > 0.25 ? spike : null };
+}
+function evidence(a, h) {
+  const c = camp(a.cids[0]);
+  const ev = { rule: a.rule, alert: RULES[a.rule].name, campaigns: a.cids.map(id => camp(id).name), started_at: when(a.start) };
+  if (c) {
+    const q = c.data[h], h0 = h - 2;
+    ev.payment = S.acct.payment ? 'failed (card declined)' : 'ok';
+    ev.delivery = q.paused ? 'paused' : q.impr > 0 ? 'ok' : 'stopped';
+    ev.landing_page = q.landing === 'up' ? 'up, loads in 1.8 s' : 'down (HTTP 503) on 2 checks';
+    ev.clicks_vs_expected = pctS(SA(c, h0, h, 'clicks') / Math.max(1, ES(c, h0, h, 'clicks')) - 1);
+    { let pg = 0, cl = 0, cv = 0, dp = 0; for (let k = h - 1; k <= h; k++) { const z = c.data[k]; if (z) { pg += z.pings; cl += z.clicks; cv += z.conv; dp += z.dup; } }
+      ev.conversion_tag = cl > 10 && pg === 0 ? `no page-view pings or conversions since ${c.siteUpdate != null ? tLabel(c.siteUpdate + 1) : 'earlier today'}` : cv >= 3 && dp / cv > 0.3 ? `firing twice per order (${Math.round(dp / cv * 100)}% duplicate order IDs)` : q.landing !== 'up' ? 'no pings (page not loading)' : 'firing normally'; }
+    ev.recent_campaign_edits = c.edits.filter(e => h - e.h < 24).map(e => `${e.text} at ${tLabel(e.h)} by ${e.by}`);
+    ev.website_update = c.siteUpdate != null && h - c.siteUpdate < 48 ? `around ${tLabel(c.siteUpdate)}` : 'none detected';
+    ev.page_content_changed = c.pageChange != null && h - c.pageChange < 48 ? `yes, at ${tLabel(c.pageChange)} (offer text changed)` : 'no';
+    if (a.si) { ev.segments = a.si.uniform ? 'all device/region slices moved equally' : `${a.si.worst.name}: cost per conversion ${a.si.worst.ratio.toFixed(1)}× normal; other slices normal`; ev.top_site = a.si.siteSpike ? `${a.si.siteSpike.name} sent ${Math.round(a.si.siteSpike.share * 100)}% of clicks (usually ${Math.round(a.si.siteSpike.eshare * 100)}%)` : 'no unusual site'; }
+    ev.publisher_changes = 'none on your sites';
+  } else ev.account_balance = inr(S.acct.balance);
+  ev.similar_advertisers_affected = a.peers + '%';
+  ev.money = { so_far: Math.round(a.spent), per_hour: Math.round(a.atRisk) };
+  ev.available_actions = actionsFor(a).map(x => x.label);
+  return ev;
+}
+
+/* ---------- investigator: evidence → cause, confidence, action ---------- */
+function investigate(a) {
+  const ev = a.ev, c = camp(a.cids[0]), d = a.data || {}, si = a.si; const cn = c ? c.name : 'Your account';
+  const ph = a.atRisk, so = a.spent; const x = {}; const cands = [];
+  const C = (cause, score, why) => cands.push({ cause, score, why });
+  const peersLine = `Only ${a.peers}% of similar advertisers saw anything like this, so it is specific to your account`;
+  switch (a.rule) {
+    case 'tracking':
+      if (d.mode === 'zero') {
+        x.headline = `${cn}: conversions dropped to 0 in the last ${d.hours} hour${d.hours > 1 ? 's' : ''} (you would normally get about ${Math.round(d.exp)}).`;
+        const site = ev.website_update !== 'none detected';
+        C('Your conversion tag stopped sending signals' + (site ? ` after your website update ${ev.website_update}` : ''),
+          2 + (ev.landing_page.startsWith('up') ? 2 : 0) + (Math.abs(d.clicksRatio - 1) < 0.3 ? 2 : 0) + (ev.conversion_tag.startsWith('no page-view') ? 3 : 0) + (site ? 2 : 0) + (si && si.uniform ? 1 : 0) + (a.peers < 20 ? 1 : 0),
+          [`Landing page is up (${ev.landing_page})`, `Clicks are normal (${ev.clicks_vs_expected} vs usual), so people are still arriving`, `Conversion tag: ${ev.conversion_tag}`, 'Every device, region and site went to zero at once, which points to tracking, not demand', peersLine]);
+        C('Your landing page is not loading', ev.landing_page.startsWith('up') ? 0 : 7, ['Page check failed']);
+        C('Bot clicks from one site', si && si.siteSpike ? 4 : 0, ['One site is sending unusual clicks']);
+        C('An offer or checkout change on your page', ev.page_content_changed !== 'no' ? 3 : 1, ['Page content changed recently']);
+        x.cost = `${inr(so)} spent since it started with no tracked results, about ${inr(ph)} an hour. Real sales may still be happening; you just can’t see them, and bidding is now learning from wrong data.`;
+        x.ifWait = `About ${inr(ph * 6)} more will be spent on blind data by this evening, and bidding may cut a campaign that is actually selling.`;
+      } else {
+        x.headline = `${cn}: reported conversions are ${d.ratio.toFixed(1)}× normal while clicks are normal.`;
+        C('Your conversion tag is firing twice for each order', 9, [`Conversions ${d.ratio.toFixed(1)}× expected, clicks ${ev.clicks_vs_expected}`, `Conversion tag: ${ev.conversion_tag}`, 'The same order ID is being reported more than once', peersLine]);
+        C('A genuine spike in sales', 2, ['Possible but clicks did not rise']);
+        x.cost = 'Results look better than they are. Budget and bid decisions are being made on inflated numbers.';
+        x.ifWait = 'Bidding will push more money into this campaign because it looks twice as good as it really is.';
+      }
+      break;
+    case 'landing':
+      x.headline = `${cn}: your landing page is not loading (failed 2 checks in a row).`;
+      C('Your website is down or returning an error', 10, [`Page check: ${ev.landing_page}`, `Clicks continue (${ev.clicks_vs_expected} vs usual), but visitors land on an error page`, 'Conversions fell close to zero at the same time', peersLine]);
+      C('A conversion tracking issue', 2, ['']);
+      x.cost = `${inr(so)} spent sending people to a broken page, about ${inr(ph)} an hour.`;
+      x.ifWait = `Every hour costs about ${inr(ph)} with almost no sales. Pausing stops the loss right away.`;
+      break;
+    case 'runaway': {
+      const edit = c.edits.filter(e => a.start - e.h < 24).slice(-1)[0];
+      x.headline = `${cn}: spent ${inr(d.spend)} in the last hour, ${d.ratio.toFixed(1)}× the usual for this time.`;
+      if (edit) C(`Daily budget was changed (${edit.text} at ${tLabel(edit.h)}) — this looks like an extra zero`, 10, [`Edit by ${edit.by} at ${tLabel(edit.h)}: ${edit.text}`, `Today’s spend is already ${inr(d.spentToday)} against a usual plan of ${inr(d.plan)}`, `Hourly spend is ${d.ratio.toFixed(1)}× normal`, peersLine]);
+      C('A sudden surge of cheap inventory', 3, ['Spend rose without a settings change']);
+      x.cost = `${inr(so)} spent above normal so far, about ${inr(ph)} extra each hour.`;
+      x.ifWait = `At this pace the new budget of ${inr(d.budget)} could be fully spent today.`;
+      break; }
+    case 'delivery': {
+      const n = a.cids.length;
+      if (d.cause === 'payment_failed') { x.headline = `${n} campaign${n > 1 ? 's' : ''} stopped showing ads at ${tLabel(a.start)}.`; C('Your payment failed (card declined), so Media.net paused delivery on the whole account', 10, ['Payment status: failed', `${n} campaigns went to 0 impressions in the same hour`, 'Ad review and budgets are fine', peersLine]); }
+      else if (d.cause === 'ad_rejected') { x.headline = `${cn}: ads stopped showing at ${tLabel(a.start)}.`; C(`Your ad was rejected in review: ${c.rejectReason || 'policy issue'}`, 10, ['Ad review status: rejected', 'Payment and budget are fine', 'Impressions fell to 0 the same hour']); }
+      else { x.headline = `${cn}: 0 impressions in the last hour.`; C('Unknown — delivery stopped', 2, ['Payment, review and budget look fine']); }
+      x.cost = `About ${inr(ph)} of sales missed every hour ads stay off (based on what this time usually brings).`;
+      x.ifWait = `Ads stay off until this is fixed — about ${inr(ph * 6)} of sales missed by this evening.`;
+      break; }
+    case 'suspicious':
+      x.headline = `${cn}: ${d.site} sent ${Math.round(d.share * 100)}% of clicks in the last 3 hours (usually 12%), with almost no conversions.`;
+      C(`Likely invalid (bot) traffic from ${d.site}`, 9, [`${d.site} share of clicks: ${Math.round(d.share * 100)}% vs 12% usual`, `Conversion rate ${pc(d.cvr)} vs ${pc(d.ecvr)} usual`, 'Other sites are behaving normally', 'Media.net’s traffic-quality team has been notified; confirmed invalid clicks are credited back']);
+      C('A genuine spike in interest from one site', 2, ['']);
+      x.cost = `${inr(d.botSpend)} spent on suspicious clicks in the last 3 hours.`;
+      x.ifWait = `Roughly ${inr(ph)} an hour keeps going to clicks that don’t convert.`;
+      break;
+    case 'cvr':
+      x.headline = `${cn}: conversion rate is ${pc(d.cvr)} over the last 6 hours (usually ${pc(d.ecvr)}), while clicks are normal.`;
+      C('Something on your landing page changed — offer, price or checkout', 3 + (ev.page_content_changed !== 'no' ? 5 : 0) + (si && si.uniform ? 2 : 0) + (ev.landing_page.startsWith('up') ? 1 : 0),
+        [`Page content changed: ${ev.page_content_changed}`, `Landing page ${ev.landing_page}; conversion tag ${ev.conversion_tag}`, si && si.uniform ? 'All devices and regions dropped equally, so it is not one audience' : `Biggest change: ${ev.segments}`, peersLine]);
+      C(`A problem in one audience slice (${si ? si.worst.name : ''})`, si && !si.uniform && si.worst.ratio > 2.2 ? 6 : 0, [ev.segments]);
+      x.cost = `About ${inr(ph)} an hour is buying clicks that convert far less than usual.`;
+      x.ifWait = `By tonight, about ${inr(ph * 8)} will have gone to clicks that rarely convert.`;
+      break;
+    case 'cost':
+      if (d.mode === 'creep') { x.headline = `${cn}: cost per conversion has risen two weeks in a row (${inr(d.w3)} → ${inr(d.w2)} → ${inr(d.w1)}).`; C('Gradual audience saturation or rising competition', 7, ['Weekly cost per conversion up 20%+ twice in a row', 'No single day or slice explains it', peersLine]); C('Seasonal change', 3, ['']); x.cost = 'Each sale costs more every week.'; x.ifWait = 'If the trend continues, next week costs another ~20% more per sale.'; }
+      else {
+        x.headline = a.note ? `Cost per click is up about ${pctS(d.cpcRatio - 1)} for ${a.peers}% of Home & Décor advertisers in the last 6 hours.` : `${cn}: cost per conversion is ${inr(d.cpa)} over 6 hours (usually ${inr(d.ecpa)}).`;
+        C(`${si ? si.worst.name : 'One slice'} is the problem: cost per conversion there is ${si ? si.worst.ratio.toFixed(1) : '?'}× normal; other slices are normal`, si && !si.uniform && si.worst.ratio > 1.7 ? 9 : 0, [ev.segments, `Overall cost per click ${pctS(d.cpcRatio - 1)} vs usual`, peersLine]);
+        C('More competition in your auctions is pushing up cost per click', d.cpcRatio > 1.3 ? 6 : 1, [`Cost per click ${pctS(d.cpcRatio - 1)} vs usual`, 'Conversion rate is close to normal', `${a.peers}% of similar advertisers affected`]);
+        C('Fewer visitors are converting', d.cpcRatio <= 1.3 ? 4 : 0, ['Cost per click is normal but conversions fell']);
+        x.cost = a.note ? 'Your campaigns are moving in line with similar advertisers.' : `About ${inr(ph)} extra each hour compared with normal efficiency.`;
+        x.ifWait = a.note ? 'No action needed. Pulse will alert you if your account starts behaving differently from similar advertisers.' : `By tonight about ${inr(ph * 8)} extra will have been spent for the same results.`;
+      }
+      break;
+    case 'ctr':
+      if (d.mode === 'trend') { x.headline = `${cn}: CTR has fallen 5 days in a row (${pc(d.days[0])} → ${pc(d.days[5])}).`; }
+      else x.headline = `${cn}: CTR is ${pc(d.ctr)} over 24 hours (usually ${pc(d.ectr)}).`;
+      C('Creative fatigue — the same people have seen this ad too often', 8, ['CTR declined steadily, not suddenly', 'Impressions and placements are normal', 'Conversion rate after the click is normal', peersLine]);
+      C('Ad placement changed on publisher sites', 2, ['No publisher layout changes found']);
+      x.cost = 'You pay for the same reach but get fewer clicks each day.';
+      x.ifWait = 'CTR usually keeps falling 5–10% a day until the ad is refreshed.';
+      break;
+    case 'under':
+      x.headline = `${cn}: on pace to spend only ${Math.round(d.ratio * 100)}% of a normal day (${inr(d.proj)} vs ${inr(d.eDay)}).`;
+      C('Your bid is too low — you are winning far fewer auctions', 8, [`Impressions ${pctS(d.imprRatio - 1)} vs usual by this time`, 'Budget is available but not being spent', 'Ads are approved and payment is fine', peersLine]);
+      C('Targeting is too narrow', 3, ['No targeting edits found']);
+      x.cost = `About ${inr(ph)} of sales missed per hour compared with a normal day.`;
+      x.ifWait = 'Today will end well below plan; evening peak hours are still ahead.';
+      break;
+    case 'budgetfc':
+      x.headline = `${cn}: at this pace the budget runs out at ${tLabel(d.exAt)}. ${Math.round(d.share * 100)}% of your sales usually come after 6 PM.`;
+      C(`Spending ${d.rate.toFixed(1)}× the usual pace this morning`, 9, [`Spend this hour is ${d.rate.toFixed(1)}× normal`, `Forecast: budget gone by ${tLabel(d.exAt)}`, `${Math.round(d.share * 100)}% of conversions usually happen 6 PM – midnight`]);
+      x.cost = `About ${inr(ph * 6)} of evening sales at risk if ads stop early.`;
+      x.ifWait = 'Ads stop showing during your best hours tonight.';
+      break;
+    case 'fatiguefc':
+      x.headline = `${cn}: CTR has fallen 3 days in a row and will likely drop below target in about ${d.days} day${d.days > 1 ? 's' : ''}.`;
+      C('Early creative fatigue', 8, [`Daily CTR: ${d.dc.map(pc).join(' → ')}`, `28-day average: ${pc(d.avg)}`, 'Refreshing now avoids paying for weaker clicks later']);
+      x.cost = 'No money lost yet — this is an early warning.'; x.ifWait = 'CTR keeps sliding and each click gets more expensive.';
+      break;
+    case 'balance':
+      x.headline = `Account balance ${inr(d.balance)} covers about ${d.days.toFixed(1)} days of spend.`;
+      C('Spend is higher than your top-ups', 9, [`Average daily spend: ${inr(d.avg)}`, `Balance: ${inr(d.balance)}`]);
+      x.cost = 'All campaigns stop when the balance hits zero.'; x.ifWait = `Ads could stop in about ${Math.max(1, Math.round(d.days * 24))} hours.`;
+      break;
+    case 'limit': {
+      const t = { cpa: ['cost per conversion', inr(d.val), inr(d.lim)], daily: ['projected spend today', inr(d.val), inr(d.lim)], conv: ['projected conversions today', num(d.val), num(d.lim)] }[d.kind];
+      x.headline = `Your ${t[0]} is ${t[1]}, beyond your limit of ${t[2]}.`;
+      C('A limit you set has been crossed', 9, [`Limit: ${t[2]}`, `Current: ${t[1]}`]);
+      x.cost = 'Based on your own business limit.'; x.ifWait = 'Pulse keeps checking every hour.';
+      break; }
+  }
+  cands.sort((p, q) => q.score - p.score);
+  const top = cands[0] || { cause: 'Unknown', score: 0, why: [] }, sec = cands[1] || { cause: '', score: 0 };
+  x.conf = clamp(Math.round(45 + (top.score - sec.score) * 5 - (a.peers >= 20 && !a.note ? 10 : 0)), 35, 96);
+  if (x.conf < 60) { x.cause = 'Not certain yet'; x.why = [`Most likely: ${top.cause}`, `Also possible: ${sec.cause}`, ...top.why.slice(0, 2)]; }
+  else { x.cause = top.cause; x.why = top.why.filter(Boolean); }
+  const acts = actionsFor(a); x.action = acts[0] ? acts[0].label : '';
+  return x;
+}
+
+function actionsFor(a) {
+  const r = a.rule, d = a.data || {}, L = [], P = (id, label) => L.push({ id, label });
+  if (a.note) { P('gotit', 'Got it'); return L; }
+  const c = camp(a.cids[0]);
+  switch (r) {
+    case 'tracking': if (d.mode === 'double') P('fixdup', 'Remove duplicate tag & re-check'); else P('testtag', 'Test conversion tag'); P('pause', 'Pause campaign'); break;
+    case 'landing': P('pagefixed', 'Page is fixed — re-check'); P('pause', 'Pause until page is fixed'); break;
+    case 'runaway': if (c && c.budget > c.planBudget) P('revert', 'Revert last edit'); P('cap', 'Set a spend cap'); P('pause', 'Pause campaign'); break;
+    case 'delivery': if (d.cause === 'payment_failed') P('retrypay', 'Retry payment'); else if (d.cause === 'ad_rejected') P('fixad', 'Fix ad & resubmit'); else P('pause', 'Pause campaign'); break;
+    case 'suspicious': P('exclude', `Exclude ${d.site || 'site'}`); P('pause', 'Pause campaign'); break;
+    case 'cvr': P('offerfix', 'Check landing page offer'); P('pause', 'Pause campaign'); break;
+    case 'cost': if (d.mode === 'creep') P('review', 'Review targeting & bids'); else if (a.si && !a.si.uniform && a.si.worst.ratio > 1.7) P('segbid', `Lower bid on ${a.si.worst.name}`); else P('lowerbid', 'Lower bid 10%'); P('pause', 'Pause campaign'); break;
+    case 'ctr': case 'fatiguefc': P('refresh', 'Refresh ad copy (3 new versions)'); break;
+    case 'under': P('raisebid', 'Raise bid 15%'); break;
+    case 'budgetfc': P('spread', 'Spread budget evenly'); P('addbudget', 'Add 30% budget today'); break;
+    case 'balance': P('addfunds', 'Add ₹2,00,000'); break;
+    case 'limit': P('review', 'Review campaigns'); break;
+  }
+  return L;
+}
+
+function answerAsk(a, q) {
+  const s = q.toLowerCase(), ex = a.ex, ev = a.ev;
+  if (/wait|later|evening|tomorrow|ignore/.test(s)) return `${ex.ifWait} Right now it costs about ${inr(a.atRisk)} an hour.`;
+  if (/sure|confiden|why|how do you know|evidence|reason/.test(s)) return `Confidence is ${ex.conf}%. ${ex.why.join('. ')}.`;
+  if (/only me|others|peer|similar|everyone|market|competit/.test(s)) return `${ev.similar_advertisers_affected} of similar Home & Décor advertisers saw the same change. ${a.peers >= 60 ? 'This is a market-wide movement.' : 'This is specific to your account.'}`;
+  if (/cost|money|spent|lose|loss|₹|rupee/.test(s)) return ex.cost;
+  if (/fix|do|action|should|next/.test(s)) return `Recommended: “${ex.action}”. ${actionsFor(a).length > 1 ? 'Other options: ' + actionsFor(a).slice(1).map(x => x.label).join(', ') + '.' : ''}`;
+  if (/tag|track|pixel/.test(s)) return `Conversion tag status: ${ev.conversion_tag || 'n/a'}. Website update: ${ev.website_update || 'n/a'}.`;
+  if (/page|site|landing/.test(s)) return `Landing page: ${ev.landing_page || 'n/a'}. Page content changed: ${ev.page_content_changed || 'n/a'}.`;
+  if (/device|mobile|region|tier|slice|segment/.test(s)) return ev.segments ? `Slices: ${ev.segments}.` : 'No slice breakdown for this alert.';
+  return `I can only answer from this alert’s checks: cause (${ex.cause}), confidence (${ex.conf}%), cost so far (${inr(a.spent)}), similar advertisers (${ev.similar_advertisers_affected}) and the recommended action (${ex.action}).`;
+}
+
+/* ---------- actions ---------- */
+function setVerifying(a, text) { a.status = 'verifying'; a.vok = 0; a.vfail = 0; a.clear = 0; logA(a, S.h - 1, `${S.settings.profile.name}: ${text}. Pulse will re-check over the next 2 hours.`); }
+function removeInj(type, cid) {
+  S.inj = S.inj.filter(i => !(i.type === type && (i.cid === cid || !i.cid)));
+  for (const c of S.camps) for (const t of c.truth) if (t.type === type && t.to == null && (!cid || c.id === cid)) t.to = S.h;
+  const c = camp(cid);
+  if (type === 'tracking' && c) c.tagOk = true;
+  if (type === 'payment') S.acct.payment = false;
+  if (type === 'rejected' && c) c.rejectReason = null;
+}
+function doAction(a, id) {
+  const c = camp(a.cids[0]), h = S.h - 1;
+  switch (id) {
+    case 'gotit': resolveAlert(a, h, 'Dismissed by you.', 0); break;
+    case 'pause': for (const cid of a.cids) camp(cid).paused = true; logA(a, h, `${S.settings.profile.name} paused ${a.cids.length > 1 ? a.cids.length + ' campaigns' : c.name}.`); resolveAlert(a, h, 'Campaign paused — no more money at risk.', 1); break;
+    case 'resume': for (const cid of a.cids) camp(cid).paused = false; logA(a, h, 'Campaign resumed.'); break;
+    case 'testtag': modal(`<h2>Conversion tag test</h2><p class="muted">Pulse sent a test order to <b>${esc(c.name)}</b>’s thank-you page.</p>
+        <ul class="checks"><li><span class="ck y">✓</span><span>Landing page loaded (1.8 s)</span></li><li><span class="ck y">✓</span><span>Click ID reached your site</span></li><li><span class="ck n">✕</span><span>Conversion tag: <b>no signal received</b>. Last signal ${c.siteUpdate != null ? tLabel(c.siteUpdate + 1) : 'earlier today'}, right after your website update.</span></li></ul>
+        <p class="small muted mt">Most likely the tag was removed from the order-confirmation page during the update. Re-add the snippet, then re-check.</p>
+        <div class="act"><button class="btn" data-do="close">Close</button><button class="btn pri" data-do="act2" data-a="${a.id}" data-x="tagfixed">I’ve re-added the tag — re-check</button></div>`); return;
+    case 'tagfixed': removeInj('tracking', c.id); setVerifying(a, 're-added the conversion tag'); break;
+    case 'fixdup': removeInj('double', c.id); setVerifying(a, 'removed the duplicate tag'); break;
+    case 'pagefixed': removeInj('pagedown', c.id); setVerifying(a, 'marked the landing page as fixed'); break;
+    case 'revert': { const old = c.budget; c.budget = c.planBudget; removeInj('runaway', c.id); c.edits.push({ h: S.h, text: `Daily budget ${inr(old)} → ${inr(c.budget)} (reverted)`, by: S.settings.profile.name, perf: false }); setVerifying(a, `reverted the budget to ${inr(c.budget)}`); break; }
+    case 'cap': modal(`<h2>Set a spend cap</h2><p class="muted">Today’s cap for <b>${esc(c.name)}</b>. Usual plan: ${inr(c.planBudget)}.</p><div class="field"><label>Daily cap (₹)</label><input id="capv" type="number" inputmode="numeric" value="${Math.round(c.planBudget)}"></div>
+        <div class="act"><button class="btn" data-do="close">Cancel</button><button class="btn pri" data-do="act2" data-a="${a.id}" data-x="capset">Set cap</button></div>`); return;
+    case 'capset': { const v = +document.getElementById('capv').value || c.planBudget; c.budget = v; c.planBudget = v; removeInj('runaway', c.id); c.edits.push({ h: S.h, text: `Daily cap set to ${inr(v)}`, by: S.settings.profile.name, perf: false }); setVerifying(a, `set a daily cap of ${inr(v)}`); break; }
+    case 'retrypay': removeInj('payment', null); setVerifying(a, 'retried payment (succeeded)'); break;
+    case 'fixad': modal(`<h2>Fix ad & resubmit</h2><p class="muted">Rejected text: “Guaranteed lowest price in India”. Reason: ${esc(c.rejectReason || '')}.</p><div class="field"><label>Suggested compliant headline</label><input id="adtxt" value="Handpicked home décor at honest prices"></div>
+        <div class="act"><button class="btn" data-do="close">Cancel</button><button class="btn pri" data-do="act2" data-a="${a.id}" data-x="adresub">Resubmit for review</button></div>`); return;
+    case 'adresub': removeInj('rejected', c.id); setVerifying(a, 'edited the ad and resubmitted (approved)'); break;
+    case 'exclude': { const credit = Math.round(a.data.botSpend || 0); c.excluded.push(4); removeInj('bots', c.id); S.acct.balance += credit; setVerifying(a, `excluded CityGuide; ${inr(credit)} of invalid clicks credited back`); break; }
+    case 'offerfix': modal(`<h2>Landing page check</h2><p class="muted">Pulse compared <b>${esc(c.name)}</b>’s landing page with yesterday.</p><ul class="checks"><li><span class="ck n">✕</span><span>Offer text changed at ${c.pageChange != null ? tLabel(c.pageChange) : 'today'}: the banner still says “30% off” but the code at checkout returns “expired”.</span></li><li><span class="ck y">✓</span><span>Page loads normally; tag fires</span></li></ul>
+        <div class="act"><button class="btn" data-do="close">Close</button><button class="btn pri" data-do="act2" data-a="${a.id}" data-x="offerok">Offer updated — re-check</button></div>`); return;
+    case 'offerok': removeInj('offer', c.id); c.pageChange = null; setVerifying(a, 'updated the offer on the landing page'); break;
+    case 'segbid': removeInj('segcost', c.id); setVerifying(a, `lowered the bid on ${a.si ? a.si.worst.name : 'the slice'} by 40%`); break;
+    case 'lowerbid': c.bid *= 0.9; removeInj('market', null); setVerifying(a, 'lowered the bid by 10%'); break;
+    case 'raisebid': c.bid *= 1.05; removeInj('under', c.id); c.edits.push({ h: S.h, text: 'Bid +15%', by: S.settings.profile.name, perf: false }); setVerifying(a, 'raised the bid by 15%'); break;
+    case 'refresh': { const base = c.name.split('–')[0].trim();
+      const v = [[`${base}: new styles just in`, 'Fresh colours for every room. Free delivery over ₹999.'], [`Make your home feel new — ${base}`, 'Handpicked pieces, easy 7-day returns.'], [`${base} your guests will notice`, 'Loved by 20,000+ homes. Shop the edit.']];
+      modal(`<h2>Refresh ad copy</h2><p class="muted">Three new versions written from your campaign and past top performers. Pick one.</p>${v.map((x, i) => `<div class="variant${i === 0 ? ' on' : ''}" data-do="pickvar"><b>${esc(x[0])}</b><span class="small muted">${esc(x[1])}</span></div>`).join('')}
+        <div class="act"><button class="btn" data-do="close">Cancel</button><button class="btn pri" data-do="act2" data-a="${a.id}" data-x="refreshed">Use selected version</button></div>`); return; }
+    case 'refreshed': removeInj('fatigue', c.id); setVerifying(a, 'switched to a refreshed ad'); break;
+    case 'spread': removeInj('fastspend', c.id); setVerifying(a, 'turned on even pacing'); break;
+    case 'addbudget': c.budget = Math.round(c.budget * 1.3); c.planBudget = c.budget; c.edits.push({ h: S.h, text: `Budget +30% to ${inr(c.budget)}`, by: S.settings.profile.name, perf: false }); setVerifying(a, 'added 30% budget for today'); break;
+    case 'addfunds': S.acct.balance += 200000; setVerifying(a, 'added ₹2,00,000 to the account'); break;
+    case 'review': modal(`<h2>Review suggestions</h2><ul class="why"><li>Exclude the two lowest-converting sites from the last 14 days.</li><li>Shift 15% of budget from Tier-2 desktop to Mobile · Metro.</li><li>Refresh the ad if CTR is also falling.</li></ul><div class="act"><button class="btn pri" data-do="close">OK</button></div>`); logA(a, h, 'Opened review suggestions.'); return;
+  }
+  closeModal(); render();
+}
+
+/* ---------- injection ---------- */
+function inject(type, cid, size) {
+  size = size || 'strong'; const h = S.h;
+  if (!INJ[type].c) cid = null;
+  if (type === 'lowbal') { S.acct.balance = Math.min(S.acct.balance, 60000); toast('Injected: low account balance (₹60,000). Detection runs next hour.', 'info'); render(); return; }
+  S.inj = S.inj.filter(x => !(x.type === type && x.cid === cid));
+  S.inj.push({ id: ++S.iid, type, cid, size, start: h });
+  const c = cid ? camp(cid) : null;
+  if (c) { c.cool = {}; c.paused = false; }
+  if (type === 'tracking') { c.tagOk = false; c.siteUpdate = h - 1; }
+  if (type === 'runaway') { const nb = c.planBudget * 10; c.edits.push({ h: h - 1, text: `Daily budget ${inr(c.budget)} → ${inr(nb)}`, by: 'Meera', perf: false }); c.budget = nb; }
+  if (type === 'offer') c.pageChange = h;
+  if (type === 'rejected') c.rejectReason = 'the claim “Guaranteed lowest price in India” is not allowed without proof';
+  if (type === 'payment') S.acct.payment = true;
+  if (type === 'market') S.camps.forEach(x => { x.cool = {}; });
+  else if (type === 'payment') S.camps.forEach(x => { x.cool = {}; x.truth.push({ type, from: h, to: null }); });
+  else c.truth.push({ type, from: h, to: null });
+  toast(`Injected: ${INJ[type].n}${c ? ' on ' + c.name : ''}. Pulse detects it from the data over the next simulated hour(s).`, 'info');
+  render();
+}
+function resetDemo() {
+  for (const i of S.inj.slice()) removeInj(i.type, i.cid);
+  S.inj = []; S.acct.payment = false;
+  for (const c of S.camps) { c.budget = c.planBudget; c.tagOk = true; c.paused = false; c.excluded = []; c.bid = 1; c.pageChange = null; c.rejectReason = null; c.cool = {}; }
+  for (const a of S.alerts) if (a.status !== 'resolved') resolveAlert(a, S.h - 1, 'Closed by demo reset.', 0);
+  S.pending = {}; toast('Demo reset: all campaigns back to normal.', 'ok'); render();
+}
+
+/* ---------- 30-day replay ---------- */
+function replay(sensMap, from, to) {
+  from = from ?? S.h - 720; to = to ?? S.h - 1;
+  const lv = r => SENS[sensMap[r] || 'M']; const res = { total: 0, real: 0, swings: 0, missed: 0, byRule: {}, fired: [] };
+  for (const c of S.camps) {
+    const open = {}, streak = {}, fired = [];
+    for (let h = from; h <= to; h++) {
+      let cs = evalRules(c, h, { sens: lv, replay: true });
+      cs = cs.filter(x => !cs.some(y => y !== x && RULES[y.rule].lvl < RULES[x.rule].lvl));
+      const seen = new Set();
+      for (const x of cs) {
+        const k = x.rule + (x.data.mode || ''); seen.add(k); streak[k] = (streak[k] || 0) + 1;
+        if (x.sev !== 'P0' && streak[k] < 2) continue;
+        if (open[k] && h - open[k].last <= 3) open[k].last = h; else { open[k] = { start: h, last: h }; fired.push({ rule: x.rule, cid: c.id, h, end: h }); }
+        fired[fired.length - 1].end = h;
+      }
+      for (const k in streak) if (!seen.has(k)) streak[k] = 0;
+    }
+    for (const f of fired) {
+      const real = c.truth.some(t => f.h >= t.from - 2 && f.h <= (t.to ?? S.h) + 8);
+      f.real = real; res.total++; real ? res.real++ : res.swings++;
+      const br = res.byRule[f.rule] || (res.byRule[f.rule] = { t: 0, r: 0 }); br.t++; if (real) br.r++;
+      res.fired.push(f);
+    }
+    for (const t of c.truth) if (t.from >= from && t.from <= to && !fired.some(f => f.h >= t.from - 2 && f.h <= (t.to ?? S.h) + 8)) res.missed++;
+  }
+  return res;
+}
+
+/* ---------- UI helpers ---------- */
+function toast(text, kind, aid) {
+  if (S.tour) return;
+  if (kind === 'info') return;
+  const box = document.getElementById('toasts'); box.innerHTML = '';
+  const el = document.createElement('div'); el.className = 'toast ' + (kind || '');
+  el.innerHTML = esc(text); if (aid) el.onclick = () => go('#/alert/' + aid);
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+  while (document.getElementById('toasts').children.length > 3) document.getElementById('toasts').firstChild.remove();
+}
+function modal(html) { document.getElementById('overlay').innerHTML = `<div class="modal-bg" data-do="bgclose"><div class="modal" role="dialog">${html}</div></div>`; }
+function closeModal() { document.getElementById('overlay').innerHTML = ''; }
+function go(hash) { if (location.hash === hash) render(); else location.hash = hash; closeModal(); }
+function sevChip(a) { if (a.note) return '<span class="chip note">Market note</span>'; return `<span class="chip ${a.sev}">${a.sev}</span>${a.fc ? '<span class="chip fc">Forecast</span>' : ''}`; }
+function statusChip(a) { return ({ active: '', verifying: '<span class="chip ver">Verifying fix</span>', resolved: `<span class="chip res">${a.fixed ? 'Fix confirmed' : 'Resolved'}</span>`, snoozed: '<span class="chip sn">Snoozed</span>' })[a.status] || ''; }
+function campStatus(c) { const as = S.alerts.filter(a => a.status !== 'resolved' && !a.note && a.cids.includes(c.id)); if (c.paused) return ['Paused', 'paused']; if (as.some(a => a.sev === 'P0')) return ['Critical', 'crit']; if (as.length) return ['Warning', 'warn']; return ['Healthy', 'ok']; }
+function liveMoney(a) { const rate = (a.status === 'active' || a.status === 'snoozed') ? a.atRisk : 0; return `<span class="money" data-live="1" data-base="${a.spent}" data-rate="${rate}">${inr(a.spent)}</span>`; }
+const activeAlerts = () => S.alerts.filter(a => a.status !== 'resolved');
+function todayRange() { const ds = dayOf(S.h - 1) * 24; return [ds, S.h - 1]; }
+
+function spark(vals, color) {
+  const w = 110, h = 30, mx = Math.max(1, ...vals); const pts = vals.map((v, i) => `${(i / (vals.length - 1) * w).toFixed(1)},${(h - 2 - v / mx * (h - 4)).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><polyline fill="none" stroke="${color || '#2A7F8E'}" stroke-width="1.6" points="${pts}"/></svg>`;
+}
+function chart(id, o) {
+  const view = document.getElementById('view'); const cw = Math.max(300, Math.min(900, (view.clientWidth || 800) - 70));
+  const W = cw, H = o.height || 200, pl = 46, pr = 10, pt = 12, pb = 26, n = o.actual.length;
+  const all = [...o.actual, ...(o.hi || [])].filter(v => isFinite(v)); const max = Math.max(1e-6, ...all) * 1.12;
+  const X = i => pl + (W - pl - pr) * i / Math.max(1, n - 1), Y = v => pt + (H - pt - pb) * (1 - v / max);
+  S.charts[id] = { ...o, W, pl, pr, n };
+  let band = '';
+  if (o.lo && o.hi) { band = `<path d="M${o.hi.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('L')}L${o.lo.map((v, i) => [i, v]).reverse().map(([i, v]) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('L')}Z" fill="#2A7F8E" opacity=".13"/>`; }
+  const line = `<path d="M${o.actual.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('L')}" fill="none" stroke="#1D3B47" stroke-width="2"/>`;
+  const exp = o.exp ? `<path d="M${o.exp.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('L')}" fill="none" stroke="#2A7F8E" stroke-width="1.2" stroke-dasharray="4 3"/>` : '';
+  let grid = ''; for (let k = 0; k <= 2; k++) { const v = max / 1.12 * k / 2; const y = Y(v); grid += `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" stroke="#E3EAEC"/><text x="${pl - 6}" y="${y + 4}" font-size="11" text-anchor="end" fill="#5B6B78">${o.fmt ? o.fmt(v) : num(v)}</text>`; }
+  let xl = ''; const step = Math.max(1, Math.round(n / (W < 500 ? 4 : 7)));
+  for (let i = 0; i < n; i += step) xl += `<text x="${X(i)}" y="${H - 7}" font-size="11" text-anchor="middle" fill="#5B6B78">${esc(o.labels[i])}</text>`;
+  const mk = o.marker != null && o.marker >= 0 && o.marker < n ? `<line x1="${X(o.marker)}" x2="${X(o.marker)}" y1="${pt}" y2="${H - pb}" stroke="#E4572E" stroke-width="1.5" stroke-dasharray="3 3"/><text x="${X(o.marker) + 4}" y="${pt + 10}" font-size="11" fill="#E4572E">issue started</text>` : '';
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" data-chart="${id}">${grid}${band}${exp}${line}${mk}${xl}<rect x="${pl}" y="0" width="${W - pl - pr}" height="${H}" fill="transparent"/></svg><div class="tip" id="tip-${id}"></div></div>
+  <div class="legend"><span><i style="background:#1D3B47"></i>Actual</span>${o.lo ? '<span><i style="background:rgba(42,127,142,.25)"></i>Normal range (same hour, last 4 weeks)</span>' : ''}${o.exp ? '<span><i style="border-top:2px dashed #2A7F8E;height:0"></i>Expected</span>' : ''}</div>`;
+}
+function hourSeries(c, h0, h1, m, label) {
+  const labels = [], actual = [], lo = [], hi = [];
+  for (let h = h0; h <= h1; h++) { const q = c.data[h]; labels.push(label === 'day' ? dLabel(h).slice(0, 6) : tLabel(h).replace(':00 ', '')); actual.push(q ? q[m] : 0); const r = ER(c, h, m); lo.push(r.lo); hi.push(r.hi); }
+  return { labels, actual, lo, hi };
+}
+
+/* ---------- navigation ---------- */
+const ICON = {
+  home: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+  bell: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>',
+  list: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+  gear: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  rep: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  play: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4"/></svg>',
+  more: '<svg class="ico" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+};
+function navHTML() {
+  const r = location.hash || '#/'; const n = activeAlerts().filter(a => !a.note).length;
+  const on = p => (p === '#/' ? r === '#/' || r === '' : r.startsWith(p)) ? 'on' : '';
+  document.getElementById('side').innerHTML = `
+    <a href="#/" class="${on('#/')}">${ICON.home}Dashboard</a>
+    <a href="#/alerts" class="${on('#/alert')}">${ICON.bell}Alerts${n ? `<span class="cnt">${n}</span>` : ''}</a>
+    <a href="#/campaigns" class="${on('#/campaign')}">${ICON.list}Campaigns</a>
+    <a href="#/settings" class="${on('#/settings')}">${ICON.gear}Settings</a>
+    <a href="#/report" class="${on('#/report')}">${ICON.rep}Weekly report</a>
+    <div class="sep"></div>
+    <a href="#/demo" class="${on('#/demo')}">${ICON.play}Demo controls</a>
+    <div class="watch">Pulse is watching ${S.camps.filter(c => !c.paused).length} campaigns · checks every simulated hour</div>`;
+  document.getElementById('bottom').innerHTML = `
+    <a href="#/" class="${on('#/')}">${ICON.home}Home</a>
+    <a href="#/alerts" class="${on('#/alert')}">${ICON.bell}Alerts${n ? `<span class="cnt">${n}</span>` : ''}</a>
+    <a href="#/campaigns" class="${on('#/campaign')}">${ICON.list}Campaigns</a>
+    <a href="#/settings" class="${on('#/settings')}">${ICON.gear}Settings</a>
+    <a href="#" data-do="more" class="${on('#/report') || on('#/demo')}">${ICON.more}More</a>`;
+}
+
+/* ---------- views ---------- */
+function viewDashboard() {
+  const [ds, he] = todayRange(); const act = activeAlerts();
+  const tot = m => S.camps.reduce((s, c) => s + SA(c, ds, he, m), 0), etot = m => S.camps.reduce((s, c) => s + ES(c, ds, he, m), 0);
+  const sp = tot('spend'), cv = tot('conv'), rev = tot('rev'), ecv = etot('conv'), esp = etot('spend');
+  const issues = act.filter(a => !a.note && a.status !== 'snoozed'); const notes = act.filter(a => a.note);
+  const risk = issues.reduce((s, a) => s + (a.status === 'active' ? a.atRisk : 0), 0);
+  const d = (v, e, inv) => { if (!e) return ''; const r = v / e - 1; const good = inv ? r < 0 : r > 0; return `<div class="d ${Math.abs(r) < 0.05 ? 'mut' : good ? 'up' : 'down'}">${pctS(r)} vs usual by now</div>`; };
+  let html = `<h1>Good ${dt(S.h).getUTCHours() < 12 ? 'morning' : dt(S.h).getUTCHours() < 17 ? 'afternoon' : 'evening'}, ${esc(S.settings.profile.name)}</h1><p class="sub">Meera Home Décor · ${dLabel(S.h)} · Account balance ${inr(S.acct.balance)}</p>`;
+  if (!S.introHidden) html += `<div class="intro"><div><b>Concept prototype on simulated data · time is paused</b><p>Nothing moves until you press <b>Next hour</b>. Every alert comes from Pulse’s detection running on the data. New here? Take the 2-minute tour — it explains each step and waits for you.</p></div><div class="x"><button class="btn pri" data-do="guide">▶ Take the tour</button><button class="btn" data-do="hideintro">Hide</button></div></div>`;
+  if (issues.length) html += `<div class="banner red"><div class="grow"><b>${issues.length} issue${issues.length > 1 ? 's' : ''} need${issues.length > 1 ? '' : 's'} attention</b><div class="small">About ${inr(risk)} at risk every hour right now</div></div><a class="btn pri" href="#/alerts">View alerts</a></div>`;
+  for (const n of notes) html += `<div class="banner blue"><div class="grow"><b>Market note</b> · ${esc(n.ex.headline)}<div class="small">${esc(n.ex.ifWait)}</div></div><a class="btn sm" href="#/alert/${n.id}">Details</a></div>`;
+  if (!issues.length && !notes.length) html += `<div class="banner green"><div class="grow"><b>All campaigns healthy</b><div class="small">Pulse is watching ${S.camps.length} campaigns and checks every simulated hour.</div></div></div>`;
+  html += `<div class="kpis">
+    <div class="kpi"><div class="l">Spend today</div><div class="v">${inr(sp)}</div>${d(sp, esp)}</div>
+    <div class="kpi"><div class="l">Conversions today</div><div class="v">${num(cv)}</div>${d(cv, ecv)}</div>
+    <div class="kpi"><div class="l">Revenue today</div><div class="v">${inr(rev)}</div></div>
+    <div class="kpi"><div class="l">Cost per conversion</div><div class="v">${cv ? inr(sp / cv) : '–'}</div>${cv && ecv ? d(sp / cv, esp / ecv, true) : ''}</div>
+    <div class="kpi"><div class="l">Active alerts</div><div class="v ${issues.length ? 'down' : ''}">${issues.length}</div><div class="d mut">${notes.length ? notes.length + ' market note' : 'P0/P1/P2'}</div></div></div>`;
+  html += `<h2>Campaign health</h2><div class="card camps" style="padding:0">${campRowsHTML()}</div>`;
+  return html;
+}
+function campRowsHTML() {
+  const [ds, he] = todayRange();
+  let h = `<div class="crow hd"><div>Campaign</div><div>Status</div><div>Spend today vs budget</div><div>Conversions</div><div>Cost / conv.</div><div>Last 24 h</div></div>`;
+  for (const c of S.camps) {
+    const [st, cls] = campStatus(c); const sp = SA(c, ds, he, 'spend'), cv = SA(c, ds, he, 'conv'), ecv = ES(c, ds, he, 'conv');
+    const vals = []; for (let k = S.h - 24; k < S.h; k++) vals.push(c.data[k] ? c.data[k].clicks : 0);
+    const pct = Math.min(100, sp / c.budget * 100);
+    h += `<a class="crow" href="#/campaign/${c.id}"><div class="nm">${esc(c.name)}</div><div class="stc"><span class="chip ${cls}">${st}</span></div>
+      <div><span class="ml">Spend vs budget</span>${inr(sp)} <span class="muted small">/ ${inr(c.budget)}</span><div class="bar ${c.budget > c.planBudget * 1.5 ? 'hot' : ''}"><i style="width:${pct}%"></i></div></div>
+      <div><span class="ml">Conversions</span>${num(cv)} <span class="small ${cv < ecv * 0.6 ? 'down' : 'muted'}">/ ${num(ecv)} expected</span></div>
+      <div><span class="ml">Cost / conv.</span>${cv ? inr(sp / cv) : '–'}</div>
+      <div><span class="ml">Clicks, last 24 h</span>${spark(vals, cls === 'crit' ? '#C0392B' : '#2A7F8E')}</div></a>`;
+  }
+  return h;
+}
+function alertCard(a) {
+  const cn = a.cids.length ? a.cids.map(id => camp(id).name).join(', ') : 'Account';
+  return `<a class="acard ${a.note ? 'note' : a.sev} ${a.status === 'resolved' ? 'res' : ''}" href="#/alert/${a.id}">
+    <div class="row-actions">${sevChip(a)}${statusChip(a)}<span class="small muted">${esc(RULES[a.rule].name)}</span></div>
+    <div class="t">${esc(a.ex.headline)}</div>
+    <div class="small">${a.note ? esc(a.ex.ifWait) : `<b>Likely cause${a.ex.conf < 60 ? '' : ` (${a.ex.conf}% sure)`}:</b> ${esc(a.ex.cause)}`}</div>
+    <div class="meta"><span>${esc(cn)}</span><span>Started ${when(a.start)}</span>${a.note ? '' : `<span>${esc(moneyLabel(a))}: ${liveMoney(a)}</span>`}${a.status === 'active' && a.atRisk > 0 && !a.note ? `<span>~${inr(a.atRisk)}/hr</span>` : ''}${a.status === 'resolved' && a.saved ? `<span class="up"><b>${inr(a.saved)} saved</b></span>` : ''}</div></a>`;
+}
+function viewAlerts() {
+  const tab = S.alertTab, f = S.sevFilter;
+  let list = tab === 'active' ? activeAlerts() : S.alerts.filter(a => a.status === 'resolved');
+  if (f !== 'all') list = list.filter(a => f === 'note' ? a.note : a.sev === f);
+  list = list.slice().sort((a, b) => (a.note - b.note) || (tab === 'active' ? b.atRisk - a.atRisk : b.end - a.end));
+  let html = `<h1>Alerts</h1><p class="sub">Ranked by money at risk per hour, not by % change. Root causes only — downstream symptoms are hidden.</p>
+    <div class="tabs"><a class="tab ${tab === 'active' ? 'on' : ''}" data-do="atab" data-v="active">Active (${activeAlerts().length})</a><a class="tab ${tab === 'resolved' ? 'on' : ''}" data-do="atab" data-v="resolved">Resolved (${S.alerts.filter(a => a.status === 'resolved').length})</a><a class="tab ${tab === 'notifs' ? 'on' : ''}" data-do="atab" data-v="notifs">Notifications sent (${S.notifs.length})</a></div>`;
+  if (tab === 'notifs') return html + notifsHTML();
+  html += `<div class="tabs">${['all', 'P0', 'P1', 'P2', 'note'].map(s => `<a class="tab ${f === s ? 'on' : ''}" data-do="sfilt" data-v="${s}" style="padding:4px 12px;font-size:12px">${s === 'all' ? 'All' : s === 'note' ? 'Market notes' : s}</a>`).join('')}</div>`;
+  if (!list.length) return html + `<div class="card empty"><b>${tab === 'active' ? 'All campaigns healthy' : 'Nothing resolved yet'}</b>${tab === 'active' ? `Pulse is watching ${S.camps.length} campaigns. Try <a href="#/demo">Demo controls</a> to inject a problem.` : 'Fixed alerts appear here with the money they saved.'}</div>`;
+  return html + `<div class="alist">${list.map(alertCard).join('')}</div>`;
+}
+function notifsHTML() {
+  if (!S.notifs.length) return `<div class="card empty"><b>No notifications yet</b>When an alert fires, every message Pulse would send (in-app, push, WhatsApp, email) appears here. Nothing is actually sent.</div>`;
+  return `<div class="card"><p class="small muted" style="margin-top:0">Simulated log — nothing is actually sent. Tap a WhatsApp message to preview it.</p><ul class="nlog" style="list-style:none;padding:0;margin:0">${S.notifs.map((n, i) => `<li class="${n.ch === 'WhatsApp' ? 'click' : ''}" ${n.ch === 'WhatsApp' ? `data-do="wa" data-i="${i}"` : ''}>
+    <span class="chn ${n.ch === 'WhatsApp' ? 'wa' : ''} ${n.status}">${esc(n.status === 'held' ? 'Held (quiet hours)' : n.status === 'digest' ? 'Daily digest' : n.status === 'resent' ? 'Re-sent · WhatsApp' : n.ch)}</span>
+    <div style="flex:1;min-width:0"><div class="small"><b>${esc(n.to)}</b> · ${when(n.h + 1)} ${n.sev ? `· ${n.sev === 'note' ? 'Market note' : n.sev}` : ''}</div><div class="small muted">${esc(n.text)}</div></div></li>`).join('')}</ul></div>`;
+}
+function alertChart(a) {
+  const c = camp(a.cids[0]); if (!c) return '<p class="muted">Account-level alert — no campaign chart.</p>';
+  const h1 = S.h - 1, h0 = Math.max(a.start - 24, h1 - 47), mk = a.start - h0;
+  if (a.rule === 'ctr' || a.rule === 'fatiguefc') {
+    const day = dayOf(h1); const labels = [], actual = [], lo = [], hi = [];
+    let avg = 0; for (let k = 1; k <= 28; k++) avg += dayCtr(c, day - k); avg /= 28;
+    for (let k = 14; k >= 0; k--) { labels.push(dLabel((day - k) * 24).slice(4)); actual.push(k === 0 ? SA(c, day * 24, h1, 'clicks') / Math.max(1, SA(c, day * 24, h1, 'impr')) : dayCtr(c, day - k)); lo.push(avg * 0.9); hi.push(avg * 1.1); }
+    return `<h3>Daily CTR, last 15 days</h3>` + chart('a' + a.id, { labels, actual, lo, hi, fmt: v => (v * 100).toFixed(1) + '%' });
+  }
+  if (a.rule === 'cost') {
+    const labels = [], actual = [], exp = [];
+    for (let h = h0; h <= h1; h++) { labels.push(tLabel(h).replace(':00 ', '')); const sp = SA(c, h - 5, h, 'spend'), cv = SA(c, h - 5, h, 'conv'); actual.push(cv ? sp / cv : 0); exp.push(ES(c, h - 5, h, 'spend') / Math.max(1, ES(c, h - 5, h, 'conv'))); }
+    return `<h3>Cost per conversion (rolling 6 hrs)</h3>` + chart('a' + a.id, { labels, actual, exp, marker: mk, fmt: v => '₹' + Math.round(v) });
+  }
+  const m = { tracking: 'conv', landing: 'conv', cvr: 'conv', runaway: 'spend', budgetfc: 'spend', under: 'spend', delivery: 'impr', suspicious: 'clicks' }[a.rule] || 'spend';
+  const title = { conv: 'Conversions per hour', spend: 'Spend per hour', impr: 'Impressions per hour', clicks: 'Clicks per hour' }[m];
+  const s = hourSeries(c, h0, h1, m);
+  return `<h3>${title}${a.cids.length > 1 ? ` · ${esc(c.name)}` : ''}</h3>` + chart('a' + a.id, { ...s, marker: mk, fmt: m === 'spend' ? (v => '₹' + num(v)) : num });
+}
+function evidenceHTML(a) {
+  const ev = a.ev; if (!ev) return '';
+  const rows = [];
+  const R = (ok, lbl, val) => rows.push(`<li><span class="ck ${ok === 1 ? 'y' : ok === 0 ? 'n' : 'i'}">${ok === 1 ? '✓' : ok === 0 ? '✕' : 'i'}</span><span class="lbl">${lbl}</span><span>${esc(val)}</span></li>`);
+  if (ev.payment) {
+    R(ev.payment === 'ok' ? 1 : 0, 'Payment', ev.payment);
+    R(ev.delivery === 'ok' ? 1 : ev.delivery === 'paused' ? 2 : 0, 'Delivery', ev.delivery);
+    R(ev.landing_page.startsWith('up') ? 1 : 0, 'Landing page', ev.landing_page);
+    const cr = parseInt(ev.clicks_vs_expected); R(Math.abs(cr) <= 30 ? 1 : 0, 'Clicks vs usual (3 hrs)', ev.clicks_vs_expected);
+    R(ev.conversion_tag === 'firing normally' ? 1 : 0, 'Conversion tag', ev.conversion_tag);
+    R(ev.recent_campaign_edits.length ? 2 : 1, 'Campaign edits (24 hrs)', ev.recent_campaign_edits.join('; ') || 'none');
+    R(ev.website_update === 'none detected' ? 1 : 2, 'Website update', ev.website_update);
+    R(ev.page_content_changed === 'no' ? 1 : 2, 'Page content changed', ev.page_content_changed);
+    if (ev.segments) R(a.si && a.si.uniform ? 2 : 0, 'Device / region slices', ev.segments);
+    if (ev.top_site) R(ev.top_site === 'no unusual site' ? 1 : 0, 'Publisher sites', ev.top_site);
+    R(1, 'Publisher-side changes', ev.publisher_changes);
+  } else R(2, 'Account balance', ev.account_balance);
+  R(a.peers >= 60 ? 2 : 1, 'Similar advertisers affected', ev.similar_advertisers_affected);
+  let seg = '';
+  if (a.si) seg = `<details class="mt"><summary>Slice breakdown (last 6 hrs)</summary><div class="tscroll"><table class="t"><tr><th>Slice</th><th>Clicks</th><th>Conv.</th><th>Cost / conv.</th><th>vs usual</th></tr>${a.si.cells.map(x => `<tr><td>${x.name}</td><td>${num(x.clicks)}</td><td>${num(x.conv)}</td><td>${x.conv ? inr(x.cpa) : '–'}</td><td class="${x.ratio > 1.5 ? 'down' : ''}">${x.conv ? x.ratio.toFixed(1) + '×' : '–'}</td></tr>`).join('')}</table>
+    <table class="t mt"><tr><th>Site</th><th>Share of clicks (3 hrs)</th><th>Usual</th></tr>${a.si.sites.map(x => `<tr><td>${x.name}</td><td class="${x.share > x.eshare * 2 ? 'down' : ''}">${Math.round(x.share * 100)}%</td><td>${Math.round(x.eshare * 100)}%</td></tr>`).join('')}</table></div></details>`;
+  const json = JSON.stringify(ev, null, 2);
+  return `<h3>Evidence checked by Pulse${a.status === 'resolved' ? ' <span class="small muted" style="font-weight:400">(as last seen while the alert was open)</span>' : ''}</h3><ul class="checks">${rows.join('')}</ul>${seg}
+    <details class="mt"><summary>Evidence sent to the investigator (JSON)</summary><pre class="json">${esc(json)}</pre></details>`;
+}
+function viewAlert(id) {
+  const a = S.alerts.find(x => x.id === +id); if (!a) return `<div class="card empty"><b>Alert not found</b><a href="#/alerts">Back to alerts</a></div>`;
+  a.seen = true;
+  const ex = a.ex, acts = actionsFor(a), c = camp(a.cids[0]);
+  const cn = a.cids.length ? a.cids.map(id => camp(id).name).join(', ') : 'Account';
+  const isOpen = a.status !== 'resolved';
+  let head = `<div class="card ad-head"><a href="#/alerts" class="small">← All alerts</a>
+    <div class="row-actions mt" style="margin-top:10px">${sevChip(a)}${statusChip(a)}<span class="small muted">${esc(RULES[a.rule].name)}</span></div>
+    <div class="big">${esc(ex.headline)}</div><div class="small muted">${esc(cn)} · started ${when(a.start)}${a.end != null ? ' · closed ' + when(a.end) : ''}</div>
+    ${a.status === 'resolved' ? `<div class="okbox mt"><b>${esc(a.resolvedMsg)}</b>${a.saved ? ` · <b>${inr(a.saved)} saved</b> (est.) vs finding it at your next usual check` : ''}</div>` : ''}
+    ${a.status === 'verifying' ? `<div class="warnbox mt"><b>Verifying your fix…</b> Pulse re-checks the data each hour (${a.vok || 0} of 2 checks passed).</div>` : ''}
+    ${a.suppressed.length ? `<div class="small muted mt">Also hiding downstream symptoms caused by this: ${esc(a.suppressed.join(', '))}.</div>` : ''}
+    ${a.note ? '' : `<div class="livebox"><div><div class="l">${esc(moneyLabel(a))}</div><div class="v money">${liveMoney(a)}</div></div>${isOpen && a.atRisk > 0 ? `<div><div class="l">Rate right now</div><div class="v">${inr(a.atRisk)}<span class="small muted">/hr</span></div></div>` : ''}<div><div class="l">Similar advertisers affected</div><div class="v">${a.peers}%</div></div></div>`}</div>`;
+  const exh = `<div class="card ad-ex"><div class="row-actions" style="justify-content:space-between;align-items:center"><h2 style="margin:0">${a.note ? 'Why this is not an alarm' : 'What happened & why'}</h2><span class="aitag" title="Prototype: generated from the evidence by rules. Production: an LLM writes this from the same evidence and cannot invent numbers.">Investigator · from Pulse’s checks</span></div>
+    ${a.note ? `<p>${esc(ex.why.join('. '))}.</p><p><b>${esc(ex.ifWait)}</b></p>` : `
+    <div class="conf"><b style="white-space:nowrap">Likely cause</b><div class="track"><i style="width:${ex.conf}%"></i></div><b>${ex.conf}%</b></div>
+    <p style="margin:0 0 6px"><b>${esc(ex.cause)}</b></p>
+    <ul class="why">${ex.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>
+    <div class="kv"><div class="k">Cost</div><div>${esc(ex.cost)}</div><div class="k">If you wait</div><div>${esc(ex.ifWait)}</div><div class="k">Recommended</div><div><b>${esc(ex.action)}</b></div></div>`}
+    <p class="small muted" style="margin:12px 0 0">Prototype note: this summary is generated from the evidence by rules. In production an LLM writes it from the same evidence and is not allowed to invent numbers.</p>
+    ${a.note ? '' : `<div class="ask"><input id="askq" data-keep="1" placeholder="Ask why… e.g. “What if I wait till evening?”" autocomplete="off"><button class="btn dark" data-do="ask" data-a="${a.id}">Ask</button></div>
+    <div class="qa">${a.ask.map(x => `<div class="q">${esc(x.q)}</div><div class="an">${esc(x.a)}</div>`).join('')}</div>`}</div>`;
+  const prim = acts[0];
+  const acth = `<div class="card ad-act"><h2>${a.note ? 'Action' : 'Fix it'}</h2>${isOpen && a.status !== 'verifying' ? `
+    ${prim ? `<button class="btn pri full pribtn" data-do="act" data-a="${a.id}" data-x="${prim.id}">${esc(prim.label)}</button>` : ''}
+    <div class="grid mt" style="gap:8px">${acts.slice(1).map(x => `<button class="btn full" data-do="act" data-a="${a.id}" data-x="${x.id}">${esc(x.label)}</button>`).join('')}</div>`
+    : a.status === 'verifying' ? '<p class="muted">Action taken. Pulse is verifying the fix on the next hours of data.</p>' : '<p class="muted">This alert is closed.</p>'}
+    ${a.autoPaused || (c && c.paused && a.cids.length === 1) ? `<button class="btn full mt" data-do="act" data-a="${a.id}" data-x="resume">Resume campaign</button>` : ''}
+    ${c ? `<a class="btn full mt" href="#/campaign/${c.id}">Open campaign</a>` : ''}</div>`;
+  const fb = a.note ? '' : `<div class="card ad-fb"><h2>Was this useful?</h2><div class="row-actions"><button class="btn ${a.feedback === 'useful' ? 'dark' : ''}" data-do="fb" data-a="${a.id}" data-v="useful">👍 Useful</button><button class="btn ${a.feedback === 'not' ? 'dark' : ''}" data-do="fb" data-a="${a.id}" data-v="not">👎 Not useful</button></div>
+    <p class="small muted">Two “Not useful” on the same rule makes it less sensitive for you.</p>
+    ${isOpen && a.status !== 'verifying' ? `<div class="row-actions"><button class="btn sm" data-do="snooze" data-a="${a.id}" data-v="2">Snooze 2 hrs</button><button class="btn sm" data-do="snooze" data-a="${a.id}" data-v="24">Snooze 24 hrs</button></div>` : ''}</div>`;
+  const log = `<div class="card ad-log"><h2>Timeline</h2><ul class="tl">${a.log.slice().reverse().map(l => `<li><div class="w">${when(l.h + 1)}</div>${esc(l.text)}</li>`).join('')}</ul></div>`;
+  const sticky = isOpen && a.status !== 'verifying' && prim ? `<div class="sticky-act"><button class="btn pri" data-do="act" data-a="${a.id}" data-x="${prim.id}">${esc(prim.label)}</button></div>` : '';
+  document.getElementById('view').classList.toggle('has-sticky', !!sticky);
+  return `<div class="ad">${head}${exh}${acth}<div class="card ad-chart">${alertChart(a)}</div><div class="card ad-evi">${evidenceHTML(a)}</div>${fb}${log}</div>${sticky}`;
+}
+function viewCampaigns() { return `<h1>Campaigns</h1><p class="sub">${S.camps.length} campaigns on Media.net’s contextual network. Tap one for charts with its normal range.</p><div class="card camps" style="padding:0">${campRowsHTML()}</div>`; }
+function viewCampaign(id) {
+  const c = camp(id); if (!c) return '<div class="card empty"><b>Campaign not found</b></div>';
+  const [st, cls] = campStatus(c), [ds, he] = todayRange(), h1 = S.h - 1, h0 = h1 - 71;
+  const as = S.alerts.filter(a => a.cids.includes(c.id)).slice(0, 6);
+  const sp = SA(c, ds, he, 'spend'), cv = SA(c, ds, he, 'conv');
+  const cw = (m, t, fmt) => `<div class="card"><h3>${t}</h3>${chart(c.id + m, { ...hourSeries(c, h0, h1, m), fmt })}</div>`;
+  const day = dayOf(h1); const cl = [], lab = []; for (let k = 13; k >= 1; k--) { lab.push(dLabel((day - k) * 24).slice(4)); cl.push(dayCtr(c, day - k)); }
+  return `<a href="#/campaigns" class="small">← All campaigns</a><h1 class="mt">${esc(c.name)} <span class="chip ${cls}" style="vertical-align:middle">${st}</span></h1>
+   <p class="sub">Spend today ${inr(sp)} of ${inr(c.budget)} · ${num(cv)} conversions · landing page ${c.data[h1].landing} · conversion tag ${c.tagOk ? 'firing' : 'no signal'}</p>
+   <div class="two"><div class="card"><h2>Daily budget</h2><div class="f2"><div class="field"><label>Daily budget (₹)</label><input id="bud" type="number" inputmode="numeric" value="${Math.round(c.budget)}"></div><div class="field"><label>&nbsp;</label><button class="btn dark full" data-do="savebud" data-c="${c.id}">Save budget</button></div></div>
+     <p class="small muted">Typo guard: changes over 5× your usual budget ask “Did you mean…?” before saving.</p>
+     <div class="row-actions">${c.paused ? `<button class="btn pri" data-do="cpause" data-c="${c.id}" data-v="0">Resume campaign</button>` : `<button class="btn" data-do="cpause" data-c="${c.id}" data-v="1">Pause campaign</button>`}</div></div>
+     <div class="card"><h2>Recent alerts & edits</h2>${as.length ? as.map(a => `<div style="margin-bottom:8px"><a href="#/alert/${a.id}">${sevChip(a)} ${esc(RULES[a.rule].name)}</a> <span class="small muted">${when(a.start)} · ${a.status}</span></div>`).join('') : '<p class="muted small">No alerts for this campaign.</p>'}
+     ${c.edits.slice(-4).reverse().map(e => `<div class="small muted">✎ ${esc(e.text)} · ${when(e.h)} · ${esc(e.by)}</div>`).join('')}</div></div>
+   <div class="grid mt">${cw('conv', 'Conversions per hour (last 3 days)')}${cw('spend', 'Spend per hour', v => '₹' + num(v))}${cw('clicks', 'Clicks per hour')}
+   <div class="card"><h3>Daily CTR (last 13 days)</h3>${chart(c.id + 'ctr', { labels: lab, actual: cl, fmt: v => (v * 100).toFixed(1) + '%' })}</div></div>`;
+}
+function viewSettings() {
+  const st = S.settings, p = st.profile;
+  const sel = (k, opts, v) => `<select data-set="profile.${k}">${opts.map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+  const segBtns = r => `<div class="seg">${LVLS.map(l => `<button class="${st.sens[r] === l ? 'on' : ''}" data-do="sens" data-r="${r}" data-v="${l}">${SENS[l].label}</button>`).join('')}</div>`;
+  const chk = (sev, k) => `<input type="checkbox" data-chan="${sev}.${k}" ${st.chan[sev][k] ? 'checked' : ''} ${sev === 'P0' && k === 'inapp' ? 'disabled' : ''} style="width:18px;height:18px">`;
+  const hrs = Array.from({ length: 24 }, (_, i) => i);
+  return `<h1>Settings</h1><p class="sub">Thresholds are learned for each campaign from its own history. You only set your profile, sensitivity, business limits and channels.</p>
+  <div class="card mb"><h2>1. Alert profile</h2><p class="small muted" style="margin-top:-4px">Five questions instead of raw thresholds. Your answers set default sensitivity.</p>
+   <div class="f3"><div class="field"><label>How often do you check campaigns?</label>${sel('check', ['Daily', 'Weekly', 'Rarely'], p.check)}</div>
+   <div class="field"><label>Always-on or short sale?</label>${sel('type', ['Always-on', 'Short sale'], p.type)}</div>
+   <div class="field"><label>How much does a wasted ₹1,000 hurt?</label>${sel('waste', ['A lot', 'Somewhat', 'Not much'], p.waste)}</div>
+   <div class="field"><label>Who gets urgent alerts?</label><input data-set="profile.name" value="${esc(p.name)}"></div>
+   <div class="field"><label>Phone (WhatsApp/SMS)</label><input data-set="profile.phone" value="${esc(p.phone)}"></div>
+   <div class="field"><label>Backup contact (if no response)</label><input data-set="profile.backup" value="${esc(p.backup)}"></div></div>
+   <div class="row-actions mt"><button class="btn dark" data-do="applyprof">Apply profile to sensitivity</button><span class="small muted" id="profmsg" style="align-self:center"></span></div></div>
+  <div class="two"><div class="card" id="sens"><h2>2. Sensitivity per rule</h2>
+   <div class="tscroll"><table class="t senst">${NINE.map(r => `<tr><td><b>${RULES[r].name}</b> <span class="chip ${RULES[r].sev}">${RULES[r].sev}</span>${S.learned.some(l => l.rule === r && !l.undone) ? '<span class="badge">Learned</span>' : ''}<div class="small muted">${RULES[r].desc}${RULES[r].sev === 'P0' ? ' <i>Can’t be turned off — you can change the channel.</i>' : ''}</div></td><td style="text-align:right">${segBtns(r)}</td></tr>`).join('')}</table></div>
+   <p class="small muted">Low = thresholds 25% wider and stricter statistics. High = 20% tighter. Starting values are for Medium; after 4 weeks each campaign uses its own learned normal range.</p></div>
+   <div><div class="replay" id="replayBox">${replayHTML()}</div>
+   <div class="card mt"><h2>Learned adjustments</h2>${S.learned.length ? S.learned.map((l, i) => `<div class="row-actions" style="justify-content:space-between;align-items:center;margin-bottom:8px"><span class="small">${l.undone ? '<s>' : ''}${esc(RULES[l.rule].name)}: ${SENS[l.from].label} → ${SENS[l.to].label} (after 2× “Not useful”)${l.undone ? '</s>' : ''}</span>${l.undone ? '' : `<button class="btn sm" data-do="undolearn" data-i="${i}">Undo</button>`}</div>`).join('') : '<p class="small muted">None yet. Mark an alert “Not useful” twice and Pulse adjusts that rule for you.</p>'}</div></div></div>
+  <div class="card mt"><h2>3. Your business limits</h2><p class="small muted" style="margin-top:-4px">Numbers you know better than any model. Pulse alerts on these in addition to learned ranges.</p>
+   <div class="f3"><div class="field"><label>Max cost per conversion (₹)</label><input type="number" inputmode="numeric" data-set="limits.maxCpa" value="${esc(st.limits.maxCpa)}" placeholder="e.g. 250"></div>
+   <div class="field"><label>Max spend per day, all campaigns (₹)</label><input type="number" inputmode="numeric" data-set="limits.maxDaily" value="${esc(st.limits.maxDaily)}" placeholder="e.g. 60000"></div>
+   <div class="field"><label>Min conversions per day</label><input type="number" inputmode="numeric" data-set="limits.minConv" value="${esc(st.limits.minConv)}" placeholder="e.g. 200"></div></div>
+   <div id="limitWarn">${limitWarnHTML()}</div></div>
+  <div class="card mt"><h2>4. Notifications</h2>
+   <div class="tscroll"><table class="t ntab"><tr><th>Level</th><th>In-app</th><th>Push</th><th>WhatsApp/SMS</th><th>Email</th><th>When</th></tr>
+   ${['P0', 'P1', 'P2', 'P3'].map(s => `<tr><td><span class="chip ${s}">${s}</span></td><td>${chk(s, 'inapp')}</td><td>${chk(s, 'push')}</td><td>${chk(s, 'wa')}</td><td>${chk(s, 'email')}</td><td class="small muted">${({ P0: 'Within 15 min, any hour', P1: 'Within 1 hr; held in quiet hours', P2: '9 AM daily digest', P3: 'Weekly health report' })[s]}</td></tr>`).join('')}</table></div>
+   <div class="f3 mt"><div class="field"><label>Quiet hours from</label><select data-set="quiet.from">${hrs.map(x => `<option value="${x}" ${x === st.quiet.from ? 'selected' : ''}>${tLabel(x)}</option>`).join('')}</select></div>
+   <div class="field"><label>Quiet hours to</label><select data-set="quiet.to">${hrs.map(x => `<option value="${x}" ${x === st.quiet.to ? 'selected' : ''}>${tLabel(x)}</option>`).join('')}</select></div>
+   <div class="field"><label>Max P1 alerts per day</label><input type="number" data-set="p1cap" value="${st.p1cap}"></div></div>
+   <label class="row-actions mt" style="align-items:center"><input type="checkbox" data-flag="waOptIn" ${st.waOptIn ? 'checked' : ''} style="width:18px;height:18px"> I agree to receive WhatsApp/SMS alerts (opt-in)</label>
+   <label class="row-actions mt" style="align-items:center"><input type="checkbox" data-flag="autoProtect" ${st.autoProtect ? 'checked' : ''} style="width:18px;height:18px"> Auto-protect: pause a campaign automatically on P0 waste alerts when Pulse is ≥80% sure (one-tap undo)</label></div>
+  <div class="card mt"><h2>5. Expected events</h2><p class="small muted" style="margin-top:-4px">Pulse doesn’t alarm on drops these explain: budget caps, your own edits (24-hr cool-down), ad schedule, late data, and festival days below (thresholds 30% wider).</p>
+   ${S.festivals.map(f => `<div class="small">📅 <b>${esc(f.name)}</b> · ${esc(f.date)}</div>`).join('')}</div>`;
+}
+function replayHTML() {
+  const r = S.replayRes;
+  if (!r) return `<h2 style="color:#fff">30-day replay</h2><p style="opacity:.85">Calculating how many alerts these settings would have sent last month…</p>`;
+  return `<h2 style="color:#fff;margin-bottom:4px">30-day replay</h2><p class="small" style="opacity:.85;margin:0">Pulse re-ran detection on the last 30 days of your data with these settings.</p>
+   <div class="nums"><div><b>${r.total}</b><span>alerts</span></div><div><b style="color:#7FD39B">${r.real}</b><span>matched real issues</span></div><div><b style="color:#F4B183">${r.swings}</b><span>normal swings</span></div><div><b style="color:#FF9C8A">${r.missed}</b><span>real issues missed</span></div></div>
+   <p class="small" style="margin:0 0 8px">“With these settings you’d have received ${r.total} alert${r.total === 1 ? '' : 's'} last month — ${r.real} matched real issues, ${r.swings} were normal swings${r.missed ? `, and ${r.missed} real issue${r.missed > 1 ? 's were' : ' was'} missed` : ''}.”</p>
+   <div class="small" style="opacity:.9">${Object.entries(r.byRule).map(([k, v]) => `${RULES[k].name}: ${v.t} (${v.r} real)`).join(' · ') || 'No alerts would have fired.'}</div>`;
+}
+function limitWarnHTML() {
+  const L = S.settings.limits, out = [], days = []; const day = dayOf(S.h - 1);
+  for (let k = 1; k <= 30; k++) { const a = (day - k) * 24, b = a + 23; days.push({ sp: S.camps.reduce((s, c) => s + SA(c, a, b, 'spend'), 0), cv: S.camps.reduce((s, c) => s + SA(c, a, b, 'conv'), 0) }); }
+  const bestCpa = Math.min(...days.map(d => d.sp / Math.max(1, d.cv))), maxSp = Math.max(...days.map(d => d.sp)), minSp = Math.min(...days.map(d => d.sp)), maxCv = Math.max(...days.map(d => d.cv)), minCv = Math.min(...days.map(d => d.cv));
+  if (+L.maxCpa > 0 && +L.maxCpa < bestCpa) out.push(`Max cost per conversion ${inr(+L.maxCpa)} is below anything you achieved in 30 days (best day: ${inr(bestCpa)}). You’d get an alert almost every day.`);
+  if (+L.maxDaily > 0 && +L.maxDaily < minSp) out.push(`Max daily spend ${inr(+L.maxDaily)} is below every day in the last 30 days (lowest: ${inr(minSp)}). Did you mean ${inr(+L.maxDaily * 10)}?`);
+  if (+L.minConv > 0 && +L.minConv > maxCv) out.push(`Minimum ${num(+L.minConv)} conversions a day is above your best day (${num(maxCv)}). This would alert every evening.`);
+  const ok = [];
+  if (+L.maxCpa > 0 && !out.length) ok.push(`Your 30-day cost per conversion ranged from ${inr(bestCpa)} upward.`);
+  if (+L.maxDaily > 0 && +L.maxDaily >= minSp) ok.push(`Daily spend ranged ${inr(minSp)}–${inr(maxSp)}.`);
+  if (+L.minConv > 0 && +L.minConv <= maxCv) ok.push(`Daily conversions ranged ${num(minCv)}–${num(maxCv)}.`);
+  return out.map(x => `<div class="warnbox">⚠ ${esc(x)}</div>`).join('') + ok.map(x => `<div class="okbox">${esc(x)}</div>`).join('');
+}
+function viewReport() {
+  const from = S.h - 168; const live = S.alerts.filter(a => a.start >= from && !a.note);
+  const hist = (S.hist ? S.hist.fired : []).filter(f => f.real && f.h >= from);
+  const rows = [
+    ...hist.map(f => ({ h: f.h, camp: camp(f.cid).name, rule: f.rule, sev: RULES[f.rule].sev, fix: Math.max(1, f.end - f.h + 1), saved: 0, status: 'Resolved (before demo)', src: 'history' })),
+    ...live.map(a => ({ h: a.start, camp: a.cids.length ? a.cids.map(id => camp(id).name).join(', ') : 'Account', rule: a.rule, sev: a.sev, fix: a.end != null ? Math.max(1, a.end - a.start) : null, saved: a.saved || 0, status: a.status === 'resolved' ? (a.fixed ? 'Fix confirmed' : 'Resolved') : a.status, src: 'live', id: a.id })),
+  ].sort((a, b) => b.h - a.h);
+  const fixed = rows.filter(r => r.fix != null), avgFix = fixed.length ? fixed.reduce((s, r) => s + r.fix, 0) / fixed.length : 0;
+  const saved = rows.reduce((s, r) => s + r.saved, 0);
+  const fbs = S.alerts.filter(a => a.feedback), useful = fbs.length ? Math.round(100 * fbs.filter(a => a.feedback === 'useful').length / fbs.length) : null;
+  const cnt = {}; rows.forEach(r => cnt[r.rule] = (cnt[r.rule] || 0) + 1); const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+  const p0 = rows.filter(r => r.sev === 'P0').length;
+  const summary = rows.length
+    ? [`Pulse caught ${rows.length} issue${rows.length > 1 ? 's' : ''} in the last 7 days (${p0} critical); the most common was ${top ? RULES[top[0]].name.toLowerCase() : '–'}.`,
+       fixed.length ? `On average issues were closed ${avgFix.toFixed(1)} hours after they started, instead of at your usual ${checkGap() / 24 > 1 ? 'check every ' + checkGap() / 24 + ' days' : 'daily check'}.` : 'No issues have been closed yet this week.',
+       saved ? `Estimated ${inr(saved)} saved by fixing problems early.` : 'Fix an alert from the Alerts page to see money saved here.']
+    : ['No issues in the last 7 days — all campaigns ran normally.', 'Pulse checked every campaign every hour.', 'Use Demo controls to see how issues are caught.'];
+  return `<h1>Weekly health report</h1><p class="sub">${dLabel(from)} – ${dLabel(S.h - 1)} · sent every Monday by email and in-app (P3)</p>
+   <div class="kpis"><div class="kpi"><div class="l">Issues caught</div><div class="v">${rows.length}</div><div class="d mut">${p0} critical</div></div>
+   <div class="kpi"><div class="l">Avg. time to fix</div><div class="v">${fixed.length ? avgFix.toFixed(1) + ' hrs' : '–'}</div><div class="d mut">from issue start</div></div>
+   <div class="kpi"><div class="l">₹ saved (est.)</div><div class="v up">${inr(saved)}</div><div class="d mut">vs next usual check</div></div>
+   <div class="kpi"><div class="l">Alerts marked useful</div><div class="v">${useful == null ? '–' : useful + '%'}</div><div class="d mut">${fbs.length} rated</div></div>
+   <div class="kpi"><div class="l">Top recurring issue</div><div class="v" style="font-size:15px">${top ? RULES[top[0]].name : '–'}</div></div></div>
+   <div class="card mb"><div class="row-actions" style="justify-content:space-between"><h2>Summary</h2><span class="aitag">Investigator · from report data</span></div><ul class="why">${summary.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>
+   <div class="card"><h2>Issues this week</h2>${rows.length ? `<div class="tscroll"><table class="t"><tr><th>When</th><th>Campaign</th><th>Issue</th><th>Level</th><th>Time to fix</th><th>Saved</th><th>Status</th></tr>${rows.map(r => `<tr><td>${when(r.h)}</td><td>${esc(r.camp)}</td><td>${r.id ? `<a href="#/alert/${r.id}">${esc(RULES[r.rule].name)}</a>` : esc(RULES[r.rule].name)}</td><td><span class="chip ${r.sev}">${r.sev}</span></td><td>${r.fix != null ? dur(r.fix) : '–'}</td><td>${r.saved ? inr(r.saved) : '–'}</td><td class="small">${esc(r.status)}</td></tr>`).join('')}</table></div>` : '<p class="muted">No issues this week.</p>'}</div>`;
+}
+const STEPS = [
+  { t: 'Conversion tag breaks', d: 'Summer Sale’s tag stops firing. Press “Next hour” 1–2 times and a P0 alert appears.', run: () => inject('tracking', 'c1') },
+  { t: 'Market event (“Is it just me?”)', d: 'Costs rise for you and 70% of similar advertisers. After ~4 hours you get a calm market note, not an alarm.', run: () => inject('market', null) },
+  { t: 'Budget typo (extra zero)', d: 'Festive Lights’ budget jumps from ₹12,000 to ₹1,20,000. Runaway spend fires the next hour.', run: () => inject('runaway', 'c3') },
+  { t: 'Budget will run out early', d: 'Diwali Gifting spends 2.5× faster. A forecast alert says when the budget runs out.', run: () => inject('fastspend', 'c7') },
+  { t: 'Payment fails on the whole account', d: 'One grouped alert instead of 8.', run: () => inject('payment', null) },
+  { t: 'Bot clicks from one site', d: 'CityGuide sends most clicks with no conversions.', run: () => inject('bots', 'c1') },
+  { t: 'Only Mobile · Tier-2 gets expensive', d: 'The investigator finds the one slice responsible (~5 hours).', run: () => inject('segcost', 'c3') },
+];
+function stepsHTML() { return STEPS.map((s, i) => `<div class="step"><div class="n">${i + 1}</div><div class="b"><b>${esc(s.t)}</b><p>${esc(s.d)}</p><button class="btn sm pri" data-do="step" data-i="${i}">Inject</button></div></div>`).join(''); }
+function viewDemo() {
+  return `<h1>Demo controls</h1><p class="sub">Inject a problem into the data generator, then press <b>Next hour</b> to move time forward. Pulse is not told what was injected — it has to detect it from the numbers.</p>
+   <div class="two"><div class="card"><h2>Inject an anomaly</h2><div class="form">
+     <div class="field"><label>Type</label><select id="injType">${Object.entries(INJ).map(([k, v]) => `<option value="${k}">${esc(v.n)}</option>`).join('')}</select></div>
+     <div class="field"><label>Campaign</label><select id="injCamp">${S.camps.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
+     <div class="field"><label>Size</label><select id="injSize"><option value="strong">Strong</option><option value="mild">Mild</option></select></div>
+     <div class="row-actions"><button class="btn pri" data-do="inject">Inject</button><button class="btn" data-do="reset">Reset all</button></div></div>
+     <h3 class="mt">Active injections</h3><ul class="injl" id="injlist" style="list-style:none;padding:0;margin:0">${injListHTML()}</ul></div>
+   <div class="card"><h2>Quick scenarios</h2><p class="small muted" style="margin-top:-4px">Inject one scenario, then press <b>Next hour</b> in the top bar to let time pass. Or take the <a href="#" data-do="guide">guided tour</a> for an explained walkthrough.</p>${stepsHTML()}</div></div>`;
+}
+function injListHTML() { return (S.inj.length ? S.inj.map(i => `<li><span class="small"><b>${esc(INJ[i.type].n)}</b>${i.cid ? ' · ' + esc(camp(i.cid).name) : ''} · since ${tLabel(i.start)} (${i.size})</span><button class="btn sm" data-do="uninj" data-t="${i.type}" data-c="${i.cid || ''}">Remove</button></li>`).join('') : '<li class="small muted">None — all campaigns generating normal data.</li>') + (S.inj.length ? '<li class="small" style="border:0">Now press <b>Next hour</b> in the top bar.</li>' : ''); }
+
+/* ---------- render ---------- */
+function render(fromTick) {
+  const r = location.hash || '#/'; const view = document.getElementById('view');
+  document.getElementById('now').innerHTML = `<small>${dLabel(S.h)}</small>${tLabel(S.h)}`;
+  document.getElementById('play').innerHTML = S.playing ? '❚❚' : '▶'; document.getElementById('play').title = S.playing ? 'Pause' : 'Play automatically';
+  navHTML();
+  if (fromTick && r.startsWith('#/settings')) return;
+  if (fromTick && r.startsWith('#/demo')) { const el = document.getElementById('injlist'); if (el) el.innerHTML = injListHTML(); return; }
+  const keep = {}; view.querySelectorAll('[data-keep]').forEach(el => keep[el.id] = el.value); const focused = document.activeElement && document.activeElement.id;
+  const sy = window.scrollY;
+  view.classList.remove('has-sticky');
+  let html;
+  if (r.startsWith('#/alerts')) html = viewAlerts();
+  else if (r.startsWith('#/alert/')) html = viewAlert(r.split('/')[2]);
+  else if (r.startsWith('#/campaigns')) html = viewCampaigns();
+  else if (r.startsWith('#/campaign/')) html = viewCampaign(r.split('/')[2]);
+  else if (r.startsWith('#/settings')) { html = viewSettings(); if (!fromTick) scheduleReplay(); }
+  else if (r.startsWith('#/report')) html = viewReport();
+  else if (r.startsWith('#/demo')) html = viewDemo();
+  else html = viewDashboard();
+  view.innerHTML = html;
+  for (const k in keep) { const el = document.getElementById(k); if (el) el.value = keep[k]; }
+  if (focused) { const el = document.getElementById(focused); if (el) { el.focus(); if (el.setSelectionRange && el.type !== 'number') try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }
+  if (fromTick) window.scrollTo(0, sy);
+  if (S.tour) applyHL();
+}
+let replayTimer = null;
+function scheduleReplay() { clearTimeout(replayTimer); S.replayRes = null; const b = document.getElementById('replayBox'); if (b) b.innerHTML = replayHTML(); replayTimer = setTimeout(() => { S.replayRes = replay(S.settings.sens); const bx = document.getElementById('replayBox'); if (bx) bx.innerHTML = replayHTML(); }, 60); }
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-do]'); if (!b) return; const D = b.dataset;
+  const a = D.a ? S.alerts.find(x => x.id === +D.a) : null;
+  switch (D.do) {
+    case 'act': e.preventDefault(); doAction(a, D.x); break;
+    case 'act2': e.preventDefault(); doAction(a, D.x); break;
+    case 'close': closeModal(); break;
+    case 'bgclose': if (e.target === b) closeModal(); break;
+    case 'pickvar': b.parentElement.querySelectorAll('.variant').forEach(v => v.classList.remove('on')); b.classList.add('on'); break;
+    case 'ask': { const inp = document.getElementById('askq'); const q = (inp.value || '').trim(); if (!q) return; a.ask.push({ q, a: answerAsk(a, q) }); inp.value = ''; render(); break; }
+    case 'fb': {
+      a.feedback = D.v; logA(a, S.h - 1, `Marked “${D.v === 'useful' ? 'Useful' : 'Not useful'}”.`);
+      if (D.v === 'not' && NINE.includes(a.rule)) {
+        S.fb[a.rule] = (S.fb[a.rule] || 0) + 1;
+        if (S.fb[a.rule] >= 2) { const cur = S.settings.sens[a.rule]; const idx = LVLS.indexOf(cur); if (idx > 0) { const to = LVLS[idx - 1]; S.settings.sens[a.rule] = to; S.learned.push({ rule: a.rule, from: cur, to, h: S.h }); toast(`Got it — ${RULES[a.rule].name} alerts are now ${SENS[to].label} sensitivity for you (fire on bigger moves only).`, 'ok'); } S.fb[a.rule] = 0; }
+        else toast('Thanks — one more “Not useful” on this rule and Pulse will make it less sensitive for you.', 'info');
+      } else if (D.v === 'useful') toast('Thanks — this keeps the rule as it is.', 'ok');
+      render(); break; }
+    case 'snooze': a.status = 'snoozed'; a.snoozeUntil = S.h + +D.v; logA(a, S.h - 1, `Snoozed for ${D.v} hrs.`); render(); break;
+    case 'atab': S.alertTab = D.v; render(); break;
+    case 'sfilt': S.sevFilter = D.v; render(); break;
+    case 'wa': { const n = S.notifs[+D.i]; const al = S.alerts.find(x => x.id === n.aid);
+      modal(`<h2>WhatsApp preview</h2><div class="wa"><div class="from">Pulse · Media.net alerts</div><div class="bub">${al && al.sev === 'P0' ? '🔴' : '🟠'} <b>${esc(al ? (al.note ? 'Market note' : al.sev + ' · ' + RULES[al.rule].name) : 'Alert')}</b>\n${esc(n.text)}\n\n${al && !al.note ? `<b>${esc(moneyLabel(al))}:</b> ${inr(al.spent)} (~${inr(al.atRisk)}/hr)\n<b>Likely cause:</b> ${esc(al.ex.cause)}\n<b>Do this:</b> ${esc(al.ex.action)}\n\n` : ''}Open in Pulse ›</div></div>
+        <div class="act"><button class="btn" data-do="close">Close</button>${al ? `<button class="btn pri" data-do="goalert" data-a="${al.id}">Open in Pulse</button>` : ''}</div>`); break; }
+    case 'goalert': go('#/alert/' + D.a); break;
+    case 'savebud': { const c = camp(D.c), v = +document.getElementById('bud').value; if (!v) return;
+      if (v > c.planBudget * 5) { modal(`<h2>Did you mean ${inr(v / 10)}?</h2><p>You entered <b>${inr(v)}</b>, which is ${(v / c.planBudget).toFixed(0)}× your usual budget of ${inr(c.planBudget)}.</p><div class="act"><button class="btn" data-do="budyes" data-c="${c.id}" data-v="${v}">Yes, ${inr(v)}</button><button class="btn pri" data-do="budyes" data-c="${c.id}" data-v="${Math.round(v / 10)}">Change to ${inr(v / 10)}</button></div>`); return; }
+      setBudget(c, v); break; }
+    case 'budyes': setBudget(camp(D.c), +D.v); closeModal(); break;
+    case 'cpause': { const c = camp(D.c); c.paused = D.v === '1'; c.edits.push({ h: S.h, text: c.paused ? 'Campaign paused' : 'Campaign resumed', by: S.settings.profile.name, perf: true }); toast(`${c.name} ${c.paused ? 'paused' : 'resumed'}.`, 'ok'); render(); break; }
+    case 'sens': S.settings.sens[D.r] = D.v; render(); break;
+    case 'applyprof': { const p = S.settings.profile; const s = S.settings.sens; const p0 = (p.check === 'Rarely' || p.waste === 'A lot') ? 'H' : 'M'; const p1 = p.type === 'Short sale' ? 'H' : (p.check === 'Daily' && p.waste === 'Not much') ? 'L' : 'M';
+      NINE.forEach(r => s[r] = RULES[r].sev === 'P0' ? p0 : p1); render(); toast(`Profile applied: P0 rules ${SENS[p0].label}, P1 rules ${SENS[p1].label}.`, 'ok'); break; }
+    case 'undolearn': { const l = S.learned[+D.i]; S.settings.sens[l.rule] = l.from; l.undone = true; render(); break; }
+    case 'inject': { const t = document.getElementById('injType').value; inject(t, document.getElementById('injCamp').value, document.getElementById('injSize').value); break; }
+    case 'reset': resetDemo(); break;
+    case 'uninj': { removeInj(D.t, D.c || null); toast('Injection removed — data returns to normal from the next hour.', 'ok'); render(); break; }
+    case 'step': { closeModal(); STEPS[+D.i].run(); break; }
+    case 'tnext': tourNext(); break;
+    case 'texit': endTour(); break;
+    case 'guide': closeModal(); startTour(); break;
+    case 'hideintro': S.introHidden = true; render(); break;
+    case 'more': e.preventDefault(); modal(`<h2>More</h2><div class="grid" style="gap:8px"><a class="btn full" href="#/report" data-do="close">${ICON.rep} Weekly report</a><a class="btn full" href="#/demo" data-do="close">${ICON.play} Demo controls</a><button class="btn pri full" data-do="guide">▶ Guided demo</button></div>`); break;
+  }
+});
+function setBudget(c, v) { const old = c.budget; c.budget = v; c.planBudget = v; c.edits.push({ h: S.h, text: `Daily budget ${inr(old)} → ${inr(v)}`, by: S.settings.profile.name, perf: true }); toast(`Budget saved: ${inr(v)}. Performance alerts pause for 24 hrs while results settle.`, 'ok'); render(); }
+function openGuide() { startTour(); return; document.getElementById('overlay').innerHTML = `<div class="sheet-bg" data-do="bgclose"><div class="sheet"><div class="hd"><h2 style="margin:0">Guided demo</h2><button class="btn sm" data-do="close">Close</button></div><p class="small muted">Run the steps in order. Each one speeds the clock to 1 simulated hour per second.</p>${stepsHTML()}</div></div>`; }
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.set) { const [g, k] = t.dataset.set.split('.'); let v = t.value; if (g === 'quiet') v = +v; if (k) S.settings[g][k] = v; else S.settings[g] = +v || v;
+    if (g === 'limits') { const w = document.getElementById('limitWarn'); if (w) w.innerHTML = limitWarnHTML(); } }
+  if (t.dataset.chan) { const [s, k] = t.dataset.chan.split('.'); S.settings.chan[s][k] = t.checked ? 1 : 0; }
+  if (t.dataset.flag) S.settings[t.dataset.flag] = t.checked;
+  if (t.id === 'speed') { S.speed = +t.value; restartLoop(); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'askq') { const b = document.querySelector('[data-do="ask"]'); b && b.click(); } if (e.key === 'Escape') closeModal(); });
+function chartTip(e) {
+  const svg = e.target.closest && e.target.closest('svg[data-chart]'); if (!svg) return; const ch = S.charts[svg.dataset.chart]; if (!ch) return;
+  const rect = svg.getBoundingClientRect(); const x = (e.clientX - rect.left) / rect.width * ch.W;
+  const i = clamp(Math.round((x - ch.pl) / (ch.W - ch.pl - ch.pr) * (ch.n - 1)), 0, ch.n - 1);
+  const tip = document.getElementById('tip-' + svg.dataset.chart); if (!tip) return; const f = ch.fmt || num;
+  tip.style.display = 'block'; tip.textContent = `${ch.labels[i]} · ${f(ch.actual[i])}${ch.lo ? ` (normal ${f(ch.lo[i])}–${f(ch.hi[i])})` : ch.exp ? ` (expected ${f(ch.exp[i])})` : ''}`;
+}
+document.addEventListener('pointermove', chartTip); document.addEventListener('click', chartTip);
+window.addEventListener('hashchange', () => { closeModal(); render(); window.scrollTo(0, 0); });
+window.addEventListener('resize', () => { clearTimeout(window.__rz); window.__rz = setTimeout(() => render(true), 200); });
+document.getElementById('play').onclick = () => { S.playing = !S.playing; render(true); };
+document.getElementById('fab').onclick = () => startTour();
+document.getElementById('nexth').onclick = () => { if (S.tour) return; tick(); };
+setInterval(() => { const frac = clamp((Date.now() - S.lastTick) / S.speed, 0, 1); if (!S.playing) return; document.querySelectorAll('[data-live]').forEach(el => { el.textContent = inr(+el.dataset.base + +el.dataset.rate * frac); }); }, 250);
+
+
+/* ---------- guided tour (nothing happens until the user presses Next) ---------- */
+function tickUntil(cond, max) { let n = 0; while (n < max) { tick(true); n++; if (cond()) break; } return n; }
+function quietReset(focus) {
+  for (const i of S.inj.slice()) removeInj(i.type, i.cid);
+  S.inj = []; S.acct.payment = false;
+  for (const c of S.camps) { c.budget = c.planBudget; c.tagOk = true; c.paused = false; c.excluded = []; c.bid = 1; c.pageChange = null; c.rejectReason = null; c.cool = {}; }
+  for (const a of S.alerts) if (a.status !== 'resolved') { a.status = 'resolved'; a.end = S.h - 1; a.resolvedMsg = 'Closed by tour reset.'; }
+  S.pending = {}; S.tour.focus = focus;
+  // make sure the scenario starts in daytime, when there is enough traffic to see things clearly
+  const save = S.tour.focus; S.tour.focus = [];
+  let guard = 0; while ((dt(S.h).getUTCHours() < 10 || dt(S.h).getUTCHours() > 13) && guard++ < 30) tick(true);
+  S.tour.focus = save;
+}
+const findA = (rule, cid) => S.alerts.find(a => a.rule === rule && a.status !== 'resolved' && (!cid || a.cids.includes(cid)));
+const T = { };
+const TOUR = [
+  { title: 'Meet Meera’s account', page: '#/', hl: '.camps',
+    before() { quietReset(['c1']); S.introHidden = true; },
+    text: () => `<p>Meera runs a home-décor brand with <b>8 campaigns</b> on Media.net. Everything is healthy right now.</p><p>Time is <b>paused at ${tLabel(S.h)}</b>. In this tour, time only moves when you press Next. Pulse checks every campaign once per simulated hour.</p>` },
+  { title: 'Something breaks — and Pulse isn’t told', page: '#/campaign/c1', hl: 'h1',
+    before() { inject('tracking', 'c1'); T.t0 = S.h; },
+    text: () => `<p>Meera’s developer updates the website. By mistake, the <b>conversion tag</b> is removed from the order page of <b>Summer Sale – Cushions</b>.</p><p>Sales still happen, but they stop being tracked. Pulse is <b>not told</b> about this — it has to notice it in the data.</p>`,
+    what: 'Next: move time forward until Pulse notices.' },
+  { title: 'Pulse raises a critical alert', page: '#/alerts', hl: '.acard',
+    before() { T.n = tickUntil(() => findA('tracking', 'c1'), 4); },
+    text: () => `<p><b>${T.n} hour${T.n > 1 ? 's' : ''} later</b>, Pulse saw <b>0 conversions while clicks were normal</b>, and the tag sent no page-view pings. That is very unlikely to happen by chance.</p><p>It raised a <b>P0 (critical) alert</b>. Alerts are ranked by <b>₹ at risk per hour</b>, and P0s go out by in-app, push, WhatsApp and email.</p>` },
+  { title: 'Pulse explains the cause', hl: '.ad-ex',
+    before() { const a = findA('tracking', 'c1'); T.a = a; go('#/alert/' + (a ? a.id : '')); },
+    text: () => T.a ? `<p>Pulse’s investigator checked payment, delivery, the landing page, clicks, the tag, recent edits and similar advertisers.</p><p>Likely cause: <b>${esc(T.a.ex.cause)}</b> — <b>${T.a.ex.conf}% sure</b>. It also shows what it’s costing and what happens if Meera waits.</p>` : '<p>The alert is still building — press Next.</p>' },
+  { title: 'The evidence behind it', hl: '.ad-evi',
+    text: () => `<p>Every check Pulse ran is listed, so Meera can see <b>why</b> it thinks this. The red ✕ is the failing check: the conversion tag.</p><p>In production, an LLM writes the explanation from exactly this evidence — it is not allowed to invent numbers.</p>` },
+  { title: 'Meera fixes it', hl: '.ad-head',
+    before() { const a = T.a || findA('tracking', 'c1'); if (a) { doAction(a, 'tagfixed'); go('#/alert/' + a.id); } },
+    text: () => `<p>Meera tapped <b>“Test conversion tag”</b>. The test found no signal, so she re-added the tag.</p><p>The alert now says <b>“Verifying fix”</b>. Pulse doesn’t take her word for it — it waits for the data to confirm.</p>`,
+    what: 'Next: move time forward so Pulse can re-check.' },
+  { title: 'Fix confirmed, alert closed', hl: '.ad-head',
+    before() { const a = T.a; T.n = tickUntil(() => !a || a.status === 'resolved', 4); render(); },
+    text: () => `<p><b>${T.n} hours later</b>, conversions are back in the normal range, so Pulse closed the alert by itself.</p><p>${T.a && T.a.saved ? `Estimated <b>${inr(T.a.saved)} saved</b> compared with Meera noticing at her usual weekly check.` : 'The money at risk stopped growing the moment the fix was confirmed.'}</p>` },
+  { title: '“Is it just me?”', page: '#/', hl: '.banner.blue',
+    before() { quietReset(['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8']); inject('market', null); T.n = tickUntil(() => S.alerts.some(a => a.note && a.status !== 'resolved'), 8); },
+    text: () => { const n = S.alerts.find(a => a.note && a.status !== 'resolved'); const r = n && n.data.cpcRatio ? pctS(n.data.cpcRatio - 1) : 'sharply'; return `<p>Now the cost per click goes up <b>${r}</b> — but for <b>${n ? n.peers : 70}% of similar Home & Décor advertisers too</b> (festive competition).</p><p>Instead of alarming Meera, Pulse shows a calm <b>market note</b>: nothing is wrong with her account. Only Media.net can do this, because it sees the whole network.</p>`; } },
+  { title: 'A budget typo', hl: '.ad-ex',
+    before() { quietReset(['c3']); T.old = camp('c3').budget; inject('runaway', 'c3'); T.n = tickUntil(() => findA('runaway', 'c3'), 3); T.a = findA('runaway', 'c3'); go('#/alert/' + (T.a ? T.a.id : '')); },
+    text: () => `<p>Someone changed Festive Lights’ daily budget from <b>${inr(T.old)}</b> to <b>${inr(T.old * 10)}</b> — an extra zero.</p><p>Within ${T.n} hour Pulse flagged <b>runaway spend</b> and pointed to the exact edit as the cause.</p>` },
+  { title: 'Reverted and confirmed', hl: '.ad-head',
+    before() { if (T.a) { doAction(T.a, 'revert'); T.n = tickUntil(() => T.a.status === 'resolved', 4); go('#/alert/' + T.a.id); render(); } },
+    text: () => `<p>Meera tapped <b>“Revert last edit”</b>. Pulse re-checked for 2 hours, saw spend back to normal, and closed the alert.</p>` },
+  { title: 'A warning before the damage', hl: '.ad-ex',
+    before() { quietReset(['c7']); inject('fastspend', 'c7'); T.n = tickUntil(() => findA('budgetfc', 'c7'), 3); T.a = findA('budgetfc', 'c7'); go('#/alert/' + (T.a ? T.a.id : '')); },
+    text: () => `<p>Diwali Gifting is spending 2.5× faster than usual this morning.</p><p>Nothing has gone wrong yet, but Pulse <b>forecasts</b> when the budget will run out and how many evening sales are at risk — so Meera can act before it happens.</p>` },
+  { title: 'Thresholds: learned, not typed', page: '#/settings', hl: '#replayBox',
+    before() { quietReset([]); S.replayRes = replay(S.settings.sens); T.base = S.replayRes; },
+    text: () => `<p>Meera never types a threshold. Pulse learns what’s normal for each campaign from its own history. She only picks <b>Low / Medium / High</b>.</p><p>The <b>30-day replay</b> shows what her settings would have sent last month: <b>${T.base.total} alerts</b>, ${T.base.real} real issues, ${T.base.swings} normal swings.</p>` },
+  { title: 'See the trade-off before saving', page: '#/settings', hl: '#replayBox',
+    before() { T.prev = { ...S.settings.sens }; NINE.forEach(r => { if (RULES[r].sev === 'P1') S.settings.sens[r] = 'H'; }); S.replayRes = replay(S.settings.sens); T.high = S.replayRes; },
+    text: () => `<p>We switched the P1 rules to <b>High</b>. Last month that would have meant <b>${T.high.total} alerts instead of ${T.base.total}</b> — ${T.high.swings} of them just normal swings.</p><p>That’s how Meera avoids alert fatigue: she sees the cost of a setting before she saves it.</p>` },
+  { title: 'That’s Pulse', page: '#/', hl: null,
+    before() { if (T.prev) S.settings.sens = T.prev; S.replayRes = null; quietReset(null); },
+    text: () => `<p><b>Detect → explain → fix → verify.</b></p><p>Now explore on your own: open <b>Demo controls</b> to inject any of 14 problems, then press <b>Next hour</b> in the top bar to watch Pulse catch it.</p>`, last: true },
+];
+function startTour() { closeModal(); S.playing = false; S.tour = { i: 0, focus: null }; document.body.classList.add('touring'); runTourStep(); }
+function endTour() { document.querySelectorAll('.hl').forEach(e => e.classList.remove('hl')); if (S.tour) { S.tour = null; } document.body.classList.remove('touring'); document.getElementById('coach').innerHTML = ''; render(); }
+function tourNext() { if (!S.tour) return; if (TOUR[S.tour.i].last) { endTour(); go('#/'); return; } S.tour.i++; runTourStep(); }
+function runTourStep() {
+  const st = TOUR[S.tour.i];
+  try { st.before && st.before(); } catch (e) { console.error(e); }
+  if (st.page && location.hash !== st.page) location.hash = st.page; else render();
+  setTimeout(() => { render(); drawCoach(); }, 30);
+}
+function drawCoach() {
+  if (!S.tour) return; const st = TOUR[S.tour.i], n = TOUR.length, i = S.tour.i;
+  document.getElementById('coach').innerHTML = `<div class="coach" role="dialog" aria-label="Guided tour"><div class="ch"><span>Step ${i + 1} of ${n}</span><span class="prog"><i style="width:${(i + 1) / n * 100}%"></i></span><span>${tLabel(S.h)}</span></div>
+   <div class="cb"><h3>${esc(st.title)}</h3>${st.text()}${st.what ? `<div class="what">${esc(st.what)}</div>` : ''}
+   <div class="cbtn"><button class="btn sm" data-do="texit">Exit tour</button><button class="btn pri" data-do="tnext">${st.last ? 'Finish' : st.what ? 'Move time forward ›' : 'Next ›'}</button></div></div></div>`;
+  applyHL(true);
+}
+function applyHL(scroll) {
+  document.querySelectorAll('.hl').forEach(e => e.classList.remove('hl'));
+  const st = S.tour && TOUR[S.tour.i]; if (!st || !st.hl) { if (scroll) window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  const el = document.querySelector('#view ' + st.hl); if (!el) return; el.classList.add('hl');
+  if (scroll) { const mob = window.innerWidth < 768; const y = el.getBoundingClientRect().top + window.scrollY - (mob ? 70 : 90); window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); }
+}
+
+/* ---------- main loop ---------- */
+function tick(silent) { const h = S.h; let spend = 0; for (const c of S.camps) { genHour(c, h); spend += c.data[h].spend; } S.acct.balance = Math.max(0, S.acct.balance - spend); S.h++; detect(h); S.lastTick = Date.now(); if (!silent) render(true); }
+function loop() { if (S.playing && !S.tour) tick(); S.timer = setTimeout(loop, S.speed); }
+function restartLoop() { clearTimeout(S.timer); S.lastTick = Date.now(); S.timer = setTimeout(loop, S.speed); render(true); }
+
+/* ---------- init ---------- */
+function init() {
+  S.camps = CDEF.map(mkCamp);
+  for (let i = 0; i < 30; i++) S.peers.push({ s: 101 + i * 17, mkt: i < 21 });
+  const D = DAYS_HIST;
+  plant(camp('c2'), 'tracking', D - 26, 11, 17); plant(camp('c5'), 'rejected', D - 21, 9, 15); plant(camp('c1'), 'pagedown', D - 15, 13, 20); plant(camp('c4'), 'under', D - 9, 0, 23); plant(camp('c3'), 'offer', D - 5, 10, 22);
+  for (let h = 0; h < START; h++) for (const c of S.camps) genHour(c, h);
+  S.h = START;
+  S.hist = replay(S.settings.sens, S.h - 168, S.h - 1);
+  render(); S.timer = setTimeout(loop, S.speed);
+}
+init();
+</script>
+</body>
+</html>
